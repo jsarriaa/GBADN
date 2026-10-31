@@ -154,3 +154,5 @@ a { color: var(--accent); }
 .data th, .data td { padding: 4px 20px 4px 0; border-bottom: 1px solid var(--line); text-align: right; font-variant-numeric: tabular-nums; }
 .data td:first-child { color: inherit; }
 .data th:first-child { font-weight: normal; text-align: left; }
+.twin { margin-top: 28px; }
+.twin .data em { font-weight: inherit; }

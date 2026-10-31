@@ -38,6 +38,8 @@ A game can also be studied like an organism. These figures of *Pokémon Emerald*
   <img src="docs/study/karyotype.png" alt="Karyotype of six chromosomes banded by GC content" width="49%">
 </p>
 
+Curiosity: at 67.1 Mbp, Emerald's decoded ROM matches the genome size of *Oikopleura dioica*, a tiny tadpole-shaped sea creature with [one of the smallest animal genomes, 65–70 Mbp](https://pmc.ncbi.nlm.nih.gov/articles/PMC8008620/). The match is only in size.
+
 To study your own cartridge, with the Python packages from `scripts/requirements-study.txt` installed:
 
 ```sh

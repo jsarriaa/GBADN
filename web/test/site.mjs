@@ -192,6 +192,7 @@ await test("the genome study shows every figure and fits a phone", async () => {
     await study.evaluate(() => document.querySelectorAll("img").forEach((image) => { image.loading = "eager"; }));
     const figures = await study.locator("figure img").count();
     if (figures !== 5) throw new Error(`${figures} figures`);
+    if (!(await study.locator(".twin").isVisible())) throw new Error("the genome twin is missing");
     await waitFor(
       () => study.evaluate(() => [...document.images].every((image) => image.complete && image.naturalWidth > 0)),
       "the figures to load",
