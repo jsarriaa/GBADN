@@ -226,8 +226,10 @@ fn is_empty(block: &[u8]) -> bool {
 
 fn is_code(block: &[u8]) -> bool {
     let halfwords: Vec<u16> = block
-        .chunks_exact(2)
-        .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u16::from_le_bytes(*pair))
         .collect();
     let mut markers = 0;
     for (index, &word) in halfwords.iter().enumerate() {
@@ -242,7 +244,9 @@ fn is_code(block: &[u8]) -> bool {
         return true;
     }
     let always_words = block
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .filter(|word| word[3] >> 4 == 0xE)
         .count();
     always_words >= ARM_MIN_ALWAYS_WORDS

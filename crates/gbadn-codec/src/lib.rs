@@ -326,7 +326,10 @@ fn decode_chromosomes(records: &[Vec<u8>]) -> Result<Vec<u8>, Error> {
 
     let mut rom = Vec::with_capacity(rom_size);
     let mut positions = [0usize; Kind::ALL.len()];
-    for entry in layout[CONTAINER_HEADER_SIZE..].chunks_exact(SEGMENT_ENTRY_SIZE) {
+    for entry in layout[CONTAINER_HEADER_SIZE..]
+        .as_chunks::<SEGMENT_ENTRY_SIZE>()
+        .0
+    {
         let kind = Kind::from_id(entry[0]).ok_or(Error::Corrupted("unknown chromosome"))?;
         let length = read_size(entry, 1);
         let position = positions[kind as usize];
