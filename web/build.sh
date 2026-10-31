@@ -11,7 +11,7 @@ target=wasm32-unknown-emscripten
 emcmake cmake -S "$root/vendor/mgba" -B "$core" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-    -DCMAKE_C_FLAGS="-DDISABLE_THREADING" \
+    -DCMAKE_C_FLAGS="-DDISABLE_THREADING -D_GNU_SOURCE" \
     -DLIBMGBA_ONLY=ON -DM_CORE_GBA=ON -DM_CORE_GB=OFF
 cmake --build "$core" --target mgba -j4
 
@@ -22,7 +22,7 @@ CARGO_PROFILE_RELEASE_PANIC=abort cargo build --release --locked -p gbadn-web --
 rm -rf "$dist"
 mkdir -p "$dist"
 emcc -O3 \
-    -DBUILD_STATIC -DDISABLE_THREADING \
+    -DBUILD_STATIC -DDISABLE_THREADING -D_GNU_SOURCE \
     -I"$root/vendor/mgba/include" -I"$core/include" \
     "$root/crates/gbadn-emu/shim/shim.c" \
     "$root/target/$target/release/libgbadn_web.a" \
