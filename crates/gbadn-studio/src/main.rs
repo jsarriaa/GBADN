@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::mpsc::{Receiver, channel};
 
 use eframe::egui::{self, Color32, RichText};
@@ -35,6 +36,7 @@ enum State {
 struct Studio {
     state: State,
     saved_to: Option<PathBuf>,
+    play_error: Option<String>,
 }
 
 impl Studio {
@@ -50,6 +52,7 @@ impl Studio {
             ctx.request_repaint();
         });
         self.saved_to = None;
+        self.play_error = None;
         self.state = State::Encoding(path, receiver);
     }
 
@@ -157,6 +160,12 @@ impl Studio {
             }
             if let Some(path) = &self.saved_to {
                 ui.colored_label(Color32::LIGHT_GREEN, format!("Saved to {}", path.display()));
+                if ui.button("Play").clicked() {
+                    self.play_error = launch_console(path).err();
+                }
+            }
+            if let Some(error) = &self.play_error {
+                ui.colored_label(Color32::LIGHT_RED, error);
             }
         });
     }
@@ -173,6 +182,20 @@ fn write_cartridge(encoded: &Encoded, target: &Path) -> std::io::Result<()> {
         encoded.fasta.as_bytes()
     };
     std::fs::write(target, contents)
+}
+
+/// Starts GBADN Console, which ships beside Studio, on a saved cartridge.
+fn launch_console(cartridge: &Path) -> Result<(), String> {
+    let studio = std::env::current_exe().map_err(|e| e.to_string())?;
+    Command::new(console_path(&studio))
+        .arg(cartridge)
+        .spawn()
+        .map(|_| ())
+        .map_err(|_| "Could not start GBADN Console. It should be beside GBADN Studio.".to_string())
+}
+
+fn console_path(studio: &Path) -> PathBuf {
+    studio.with_file_name(format!("gbadn-emu{}", std::env::consts::EXE_SUFFIX))
 }
 
 fn report(ui: &mut egui::Ui, encoded: &Encoded) {
@@ -339,6 +362,34 @@ mod tests {
         assert!(harness.query_by_label_contains("not a GBA ROM").is_some());
         assert!(harness.query_by_label("Save cartridge").is_none());
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn play_appears_only_after_saving_and_explains_a_missing_console() {
+        let dir = temp_dir("studio-play");
+        let rom = dir.join("demo.gba");
+        std::fs::write(&rom, demo::rom()).unwrap();
+
+        let mut harness = studio();
+        harness.step();
+        drop_and_wait(&mut harness, &rom);
+        assert!(harness.query_by_label("Play").is_none());
+
+        // The test binary lives in a folder without the console, so launching must fail politely.
+        harness.state_mut().saved_to = Some(dir.join("demo.fasta.gz"));
+        harness.step();
+        harness.get_by_label("Play").click();
+        harness.step();
+        harness.step();
+        assert!(harness.query_by_label_contains("Could not start").is_some());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn the_console_is_looked_for_beside_studio() {
+        let console = console_path(Path::new("/apps/gbadn/gbadn-studio"));
+        assert_eq!(console.parent(), Some(Path::new("/apps/gbadn")));
+        assert!(console.to_string_lossy().contains("gbadn-emu"));
     }
 
     #[test]
