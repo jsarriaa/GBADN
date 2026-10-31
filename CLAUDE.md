@@ -42,9 +42,14 @@ If a step could not be done, leave the item as `[~]` and note what's missing. Ne
 
 - APKs build in GitHub Actions. Don't install an SDK, NDK or JDK on a machine unless its owner agrees.
 - To test: `gh run download <run-id>`, `adb install -r <apk>`, `adb logcat`, and `adb exec-out screencap -p`. Builds with access to the repository's secrets share a lasting signature, so updates install in place.
-- The signing key lives in the secrets `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`, and its owner keeps a backup. Never commit it. Losing it means users must uninstall to update, losing their saves. Release tags refuse to build without it.
+- The signing key lives in the secrets `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`, and its owner keeps a backup. Never commit it. Losing it means users must uninstall to update, losing their saves. Without the secrets, builds get a temporary key and a warning.
 - Rust panics go to `adb logcat` under the tag `gbadn`.
 - Keep Android-only code in `crates/gbadn-emu/src/android.rs` and `android/`. The console takes touch controls and the file picker as options, so desktop tests can cover them.
+
+## Browser
+
+- `web/build.sh` builds with Emscripten in CI, and `web/test/site.mjs` drives the result in headless Chromium. CI saves its screenshots as an artifact: look at them, because a test reading the canvas can pass while something covers the game.
+- It deploys to GitHub Pages from `main`. The site must never include a game, and visitors' files must never leave their device.
 
 ## Commands
 

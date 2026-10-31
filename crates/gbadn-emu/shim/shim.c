@@ -119,6 +119,14 @@ bool gbadn_core_load_state(struct gbadn_core* handle, const void* state) {
 	return handle->core->loadState(handle->core, state);
 }
 
+size_t gbadn_core_savedata_clone(struct gbadn_core* handle, void** save) {
+	return handle->core->savedataClone(handle->core, save);
+}
+
+bool gbadn_core_savedata_restore(struct gbadn_core* handle, const void* save, size_t size) {
+	return handle->core->savedataRestore(handle->core, save, size, false);
+}
+
 const uint32_t* gbadn_core_video(const struct gbadn_core* handle) {
 	return handle->video;
 }

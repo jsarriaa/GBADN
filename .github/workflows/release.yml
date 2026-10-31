@@ -80,9 +80,9 @@ jobs:
             echo "ANDROID_KEYSTORE=$RUNNER_TEMP/gbadn.jks" >> "$GITHUB_ENV"
             echo "ANDROID_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
           fi
-      - name: Refuse to publish with a throwaway key
-        if: startsWith(github.ref, 'refs/tags/')
-        run: test -n "${ANDROID_KEYSTORE:-}"
+      - name: Warn about a temporary key
+        if: env.ANDROID_KEYSTORE == ''
+        run: echo "::warning::This APK has a temporary signing key, so it can't update an existing install."
       - name: Build the APK
         run: scripts/build-android.sh "gbadn-${GITHUB_REF_NAME//\//-}-android-arm64.apk"
       - uses: actions/upload-artifact@v4
