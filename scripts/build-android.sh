@@ -14,6 +14,7 @@ android_jar="$ANDROID_HOME/platforms/$(ls "$ANDROID_HOME/platforms" | sort -V | 
 toolchain="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
 
 export "CC_aarch64_linux_android=$toolchain/$triple$api-clang"
+export "CXX_aarch64_linux_android=$toolchain/$triple$api-clang++"
 export "AR_aarch64_linux_android=$toolchain/llvm-ar"
 export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$toolchain/$triple$api-clang"
 # Android 15 and later phones may use 16 KB memory pages.

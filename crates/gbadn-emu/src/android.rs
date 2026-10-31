@@ -1,8 +1,8 @@
 //! The console's entry point on Android.
 
-use eframe::egui_winit::winit::platform::android::activity::AndroidApp;
 use jni::JavaVM;
 use jni::objects::JObject;
+use winit::platform::android::activity::AndroidApp;
 
 use crate::app::Console;
 use crate::audio::Speaker;
