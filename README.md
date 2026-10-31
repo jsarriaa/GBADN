@@ -30,7 +30,7 @@ Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is
 You need Rust 1.92 or newer, a C compiler, CMake and the SDL2 development package. On Ubuntu:
 
 ```sh
-sudo apt install build-essential cmake libsdl2-dev
+sudo apt install build-essential cmake libsdl2-dev libudev-dev
 git clone --recurse-submodules <repository-url>
 cd GBADN
 cargo build --release
@@ -60,7 +60,9 @@ cargo run --release -p gbadn-studio
 
 Battery saves are written next to the cartridge as `<name>.sav`, and save states as `<name>.state`. There is one save state per game, and saving replaces it.
 
-| GBA button | Key |
+Keys can be changed under **Controls**, and your choices are remembered. Gamepads work too: A and B are the right and bottom face buttons, as on a GBA.
+
+| GBA button | Default key |
 |---|---|
 | D-pad | Arrow keys |
 | A / B | Z / X |
