@@ -5,7 +5,7 @@ import { extname, join } from "node:path";
 import { chromium } from "playwright";
 
 const [dist, romPath, shots] = process.argv.slice(2);
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".svg": "image/svg+xml" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".svg": "image/svg+xml", ".png": "image/png" };
 
 const server = createServer(async (request, response) => {
   const requested = new URL(request.url, "http://localhost").pathname;
@@ -180,6 +180,27 @@ await test("a phone held upright fits too", async () => {
   await waitFor(() => isGreen(phone), "a green screen");
   await expectGameOnScreen(phone);
   await phone.screenshot({ path: join(shots, "phone-upright.png") });
+});
+
+await test("the genome study shows every figure and fits a phone", async () => {
+  for (const [name, width] of [["study", 1200], ["study-phone", 400]]) {
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const study = await context.newPage();
+    await study.goto(`${url}index.html`);
+    await study.click(".study-link");
+    await study.waitForURL("**/study.html");
+    await study.evaluate(() => document.querySelectorAll("img").forEach((image) => { image.loading = "eager"; }));
+    const figures = await study.locator("figure img").count();
+    if (figures !== 5) throw new Error(`${figures} figures`);
+    await waitFor(
+      () => study.evaluate(() => [...document.images].every((image) => image.complete && image.naturalWidth > 0)),
+      "the figures to load",
+    );
+    const overflow = await study.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    if (overflow > 0) throw new Error(`${overflow}px wider than a ${width}px screen`);
+    await study.screenshot({ path: join(shots, `${name}.png`), fullPage: true });
+    await context.close();
+  }
 });
 
 await test("the logo renders", async () => {

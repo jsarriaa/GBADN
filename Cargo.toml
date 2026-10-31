@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/gbadn-codec", "crates/gbadn-emu", "crates/gbadn-studio", "crates/gbadn-web"]
+members = ["crates/gbadn-codec", "crates/gbadn-emu", "crates/gbadn-studio", "crates/gbadn-study", "crates/gbadn-web"]
 
 [workspace.package]
 version = "0.2.0"
