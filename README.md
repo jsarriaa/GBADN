@@ -52,10 +52,11 @@ You can also pass a cartridge directly. The included demo is a tiny original pro
 cargo run --release -p gbadn-emu -- samples/demo.fasta
 ```
 
-Open Studio to convert a ROM you own:
+Open Studio to convert a ROM you own, then click **Play** once it's saved:
 
 ```sh
-cargo run --release -p gbadn-studio
+cargo build --release
+target/release/gbadn-studio
 ```
 
 Battery saves are written next to the cartridge as `<name>.sav`, and save states as `<name>.state`. There is one save state per game, and saving replaces it.
