@@ -2,7 +2,7 @@
 
 pub mod app;
 
-use std::ffi::{CString, c_char, c_int};
+use std::ffi::{CString, c_char, c_int, c_void};
 use std::path::{Path, PathBuf};
 use std::ptr::NonNull;
 
@@ -44,11 +44,20 @@ pub fn read_cartridge(path: &Path) -> Result<Vec<u8>, LoadError> {
 
 /// Where a cartridge keeps its battery save: `game.fasta.gz` and `game.fasta` share `game.sav`.
 pub fn save_path(cartridge: &Path) -> PathBuf {
+    beside_cartridge(cartridge, "sav")
+}
+
+/// Where a cartridge keeps its save state, named like its battery save.
+pub fn state_path(cartridge: &Path) -> PathBuf {
+    beside_cartridge(cartridge, "state")
+}
+
+fn beside_cartridge(cartridge: &Path, extension: &str) -> PathBuf {
     let without_gz = match cartridge.extension().and_then(|e| e.to_str()) {
         Some(e) if e.eq_ignore_ascii_case("gz") => cartridge.with_extension(""),
         _ => cartridge.to_path_buf(),
     };
-    without_gz.with_extension("sav")
+    without_gz.with_extension(extension)
 }
 
 /// GBA buttons, as bits of the mask passed to [`Core::run_frame`].
@@ -79,6 +88,9 @@ unsafe extern "C" {
     ) -> *mut RawCore;
     fn gbadn_core_free(core: *mut RawCore);
     fn gbadn_core_run_frame(core: *mut RawCore, keys: u32);
+    fn gbadn_core_state_size(core: *mut RawCore) -> usize;
+    fn gbadn_core_save_state(core: *mut RawCore, state: *mut c_void) -> bool;
+    fn gbadn_core_load_state(core: *mut RawCore, state: *const c_void) -> bool;
     fn gbadn_core_video(core: *const RawCore) -> *const u32;
     fn gbadn_core_read_audio(core: *mut RawCore, stereo: *mut i16, max_frames: usize) -> usize;
 }
@@ -105,6 +117,25 @@ impl Core {
     pub fn run_frame(&mut self, keys: u32) {
         // SAFETY: self.0 is a live core, exclusively borrowed.
         unsafe { gbadn_core_run_frame(self.0.as_ptr(), keys) }
+    }
+
+    /// Captures the whole console, to restore later with [`Core::load_state`].
+    pub fn save_state(&mut self) -> Option<Vec<u8>> {
+        // SAFETY: self.0 is a live core, and the buffer is exactly the size it asks for.
+        unsafe {
+            let mut state = vec![0; gbadn_core_state_size(self.0.as_ptr())];
+            gbadn_core_save_state(self.0.as_ptr(), state.as_mut_ptr().cast()).then_some(state)
+        }
+    }
+
+    /// Restores a captured console. Returns false, leaving the game running,
+    /// when the state is damaged or belongs to another game.
+    pub fn load_state(&mut self, state: &[u8]) -> bool {
+        // SAFETY: self.0 is a live core, and the core only reads the size it asks for.
+        unsafe {
+            state.len() == gbadn_core_state_size(self.0.as_ptr())
+                && gbadn_core_load_state(self.0.as_ptr(), state.as_ptr().cast())
+        }
     }
 
     /// The current frame, as bytes in R, G, B, X order.

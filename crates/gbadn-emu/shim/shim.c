@@ -109,6 +109,18 @@ void gbadn_core_run_frame(struct gbadn_core* handle, uint32_t keys) {
 	handle->core->runFrame(handle->core);
 }
 
+size_t gbadn_core_state_size(struct gbadn_core* handle) {
+	return handle->core->stateSize(handle->core);
+}
+
+bool gbadn_core_save_state(struct gbadn_core* handle, void* state) {
+	return handle->core->saveState(handle->core, state);
+}
+
+bool gbadn_core_load_state(struct gbadn_core* handle, const void* state) {
+	return handle->core->loadState(handle->core, state);
+}
+
 const uint32_t* gbadn_core_video(const struct gbadn_core* handle) {
 	return handle->video;
 }

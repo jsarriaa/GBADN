@@ -155,3 +155,53 @@ fn a_refused_file_does_not_stop_the_running_game() {
     assert!(harness.state().screen().is_some());
     assert!(harness.query_by_label("GBADN DEMO").is_some());
 }
+
+#[test]
+fn save_state_writes_a_file_beside_the_cartridge_and_load_restores_it() {
+    let dir = TempDir::new("window-state");
+    let cartridge = demo_cartridge(&dir);
+    let mut harness = console();
+    drop_file(&mut harness, &cartridge);
+    step_until(&mut harness, |h| h.state().screen().is_some());
+
+    harness.get_by_label("Load state").click();
+    step_until(&mut harness, |h| {
+        h.query_by_label_contains("no saved state").is_some()
+    });
+
+    harness.get_by_label("Save state").click();
+    step_until(&mut harness, |h| h.query_by_label("State saved").is_some());
+    assert!(dir.0.join("demo.state").exists());
+
+    harness.get_by_label("Load state").click();
+    step_until(&mut harness, |h| h.query_by_label("State loaded").is_some());
+    assert!(harness.query_by_label_contains("no saved state").is_none());
+}
+
+#[test]
+fn function_keys_save_and_load_states() {
+    let dir = TempDir::new("window-state-keys");
+    let mut harness = console();
+    drop_file(&mut harness, &demo_cartridge(&dir));
+    step_until(&mut harness, |h| h.state().screen().is_some());
+
+    harness.key_press(Key::F5);
+    step_until(&mut harness, |h| h.query_by_label("State saved").is_some());
+    harness.key_press(Key::F9);
+    step_until(&mut harness, |h| h.query_by_label("State loaded").is_some());
+}
+
+#[test]
+fn a_damaged_state_is_refused_and_the_game_keeps_running() {
+    let dir = TempDir::new("window-state-bad");
+    let mut harness = console();
+    drop_file(&mut harness, &demo_cartridge(&dir));
+    step_until(&mut harness, |h| h.state().screen().is_some());
+
+    dir.file("demo.state", b"not a state");
+    harness.get_by_label("Load state").click();
+    step_until(&mut harness, |h| {
+        h.query_by_label_contains("damaged").is_some()
+    });
+    assert!(harness.state().screen().is_some());
+}
