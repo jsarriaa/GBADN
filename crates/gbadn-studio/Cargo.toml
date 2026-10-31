@@ -1,0 +1,11 @@
+[package]
+name = "gbadn-studio"
+description = "Drag a GBA ROM in, get a DNA file out"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+eframe = "0.35"
+gbadn-codec = { path = "../gbadn-codec" }
+rfd = "0.15"
