@@ -12,10 +12,14 @@ Early development: see [ROADMAP.md](ROADMAP.md) for what works today.
 ## How it works
 
 ```
-game.gba -> zstd -> 2 bits per base -> gzip -> game.fasta.gz -> Console decodes in memory -> mGBA
+game.gba -> chromosomes -> zstd -> 2 bits per base -> gzip -> game.fasta.gz -> Console decodes in memory -> mGBA
 ```
 
-The output is a real single-record FASTA file with only `A`, `C`, `G` and `T`, and every cartridge carries an MD5 checksum, so a single mutated base is detected. The full specification is in [docs/FORMAT.md](docs/FORMAT.md).
+The output is a real multi-record FASTA file with only `A`, `C`, `G` and `T`, and every cartridge carries an MD5 checksum, so a single mutated base is detected. The full specification is in [docs/FORMAT.md](docs/FORMAT.md).
+
+### Chromosomes
+
+Each cartridge is split into `chrHeader`, `chrCode`, `chrGraphics`, `chrAudio`, `chrData` and `chrEmpty`, plus a `gbadn_layout` record that rebuilds the exact ROM. A GBA ROM has no table of contents, so apart from the header and empty space these labels are best guesses from the content; a wrong guess never affects the game. Pokemon Emerald, for example, splits into roughly 10% code, 10% compressed graphics, 26% sampled audio, 37% other data and 18% empty space.
 
 ### About "compress"
 
@@ -36,7 +40,13 @@ If you cloned without submodules, run `git submodule update --init`.
 
 ## Run
 
-Try it with the included demo, a tiny original program that shows a green screen, turning red while a button is held:
+Open the console, then click **Open cartridge** or drop a `.fasta.gz` onto the window:
+
+```sh
+cargo run --release -p gbadn-emu
+```
+
+You can also pass a cartridge directly. The included demo is a tiny original program that shows a green screen, turning red while a button is held:
 
 ```sh
 cargo run --release -p gbadn-emu -- samples/demo.fasta
@@ -56,14 +66,13 @@ Battery saves are written next to the cartridge, as `<name>.sav`.
 | A / B | Z / X |
 | L / R | A / S |
 | Start / Select | Enter / Backspace |
-| Quit | Esc |
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | `crates/gbadn-codec` | The ROM to FASTA format, shared by both programs |
-| `crates/gbadn-emu` | The console: FASTA-only loader, SDL2 frontend, C shim over mGBA |
+| `crates/gbadn-emu` | The console: FASTA-only loader, egui window, SDL2 sound, C shim over mGBA |
 | `crates/gbadn-studio` | The desktop UI |
 | `vendor/mgba` | [mGBA](https://mgba.io) 0.10.5 as a git submodule (MPL-2.0) |
 | `samples/demo.fasta` | The original demo cartridge |

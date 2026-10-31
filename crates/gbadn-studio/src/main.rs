@@ -11,7 +11,7 @@ const PREVIEW_BASES: usize = 48;
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([560.0, 460.0])
+            .with_inner_size([560.0, 640.0])
             .with_drag_and_drop(true),
         ..Default::default()
     };
@@ -77,15 +77,7 @@ impl Studio {
         let Some(target) = target else {
             return;
         };
-        let is_gzip = target
-            .extension()
-            .is_some_and(|e| e.eq_ignore_ascii_case("gz"));
-        let contents = if is_gzip {
-            encoded.fasta_gz.as_slice()
-        } else {
-            encoded.fasta.as_bytes()
-        };
-        match std::fs::write(&target, contents) {
+        match write_cartridge(encoded, &target) {
             Ok(()) => self.saved_to = Some(target),
             Err(error) => self.state = State::Failed(format!("could not save: {error}")),
         }
@@ -94,6 +86,12 @@ impl Studio {
 
 impl eframe::App for Studio {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.show(ui);
+    }
+}
+
+impl Studio {
+    fn show(&mut self, ui: &mut egui::Ui) {
         let ctx = ui.ctx().clone();
         self.poll();
 
@@ -164,6 +162,19 @@ impl eframe::App for Studio {
     }
 }
 
+/// Writes gzip when the name asks for it, and plain FASTA otherwise.
+fn write_cartridge(encoded: &Encoded, target: &Path) -> std::io::Result<()> {
+    let is_gzip = target
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("gz"));
+    let contents = if is_gzip {
+        encoded.fasta_gz.as_slice()
+    } else {
+        encoded.fasta.as_bytes()
+    };
+    std::fs::write(target, contents)
+}
+
 fn report(ui: &mut egui::Ui, encoded: &Encoded) {
     let title = if encoded.info.title.is_empty() {
         "Untitled"
@@ -194,6 +205,21 @@ fn report(ui: &mut egui::Ui, encoded: &Encoded) {
             ui.end_row();
         }
     });
+    ui.add_space(6.0);
+    ui.label(RichText::new("Chromosomes (best guess from the content)").strong());
+    egui::Grid::new("chromosomes")
+        .num_columns(2)
+        .show(ui, |ui| {
+            for chromosome in &encoded.chromosomes {
+                ui.label(chromosome.kind.description());
+                ui.label(format!(
+                    "{}, {:.1}%",
+                    format_bytes(chromosome.rom_bytes),
+                    chromosome.rom_bytes as f64 * 100.0 / encoded.rom_size as f64
+                ));
+                ui.end_row();
+            }
+        });
     ui.add_space(6.0);
     let preview = encoded.fasta.lines().nth(1).unwrap_or_default();
     ui.horizontal_wrapped(|ui| {
@@ -240,5 +266,98 @@ fn format_mass(grams: f64) -> String {
         format!("{:.1} femtograms", grams * 1e15)
     } else {
         format!("{:.1} attograms", grams * 1e18)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::{Duration, Instant};
+
+    use eframe::egui::DroppedFile;
+    use egui_kittest::Harness;
+    use egui_kittest::kittest::Queryable;
+    use gbadn_codec::demo;
+
+    use super::*;
+
+    fn studio() -> Harness<'static, Studio> {
+        Harness::new_ui_state(|ui, studio: &mut Studio| studio.show(ui), Studio::default())
+    }
+
+    fn drop_and_wait(harness: &mut Harness<'_, Studio>, path: &Path) {
+        harness.input_mut().dropped_files.push(DroppedFile {
+            path: Some(path.to_path_buf()),
+            ..Default::default()
+        });
+        let start = Instant::now();
+        loop {
+            harness.step();
+            if !matches!(harness.state().state, State::Encoding(..)) {
+                harness.step();
+                return;
+            }
+            assert!(
+                start.elapsed() < Duration::from_secs(20),
+                "encoding timed out"
+            );
+            std::thread::sleep(Duration::from_millis(5));
+        }
+    }
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("gbadn-{name}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn a_dropped_rom_produces_a_report_and_a_save_button() {
+        let dir = temp_dir("studio-drop");
+        let rom = dir.join("demo.gba");
+        std::fs::write(&rom, demo::rom()).unwrap();
+
+        let mut harness = studio();
+        harness.step();
+        drop_and_wait(&mut harness, &rom);
+
+        assert!(harness.query_by_label_contains("GBADN DEMO").is_some());
+        assert!(harness.query_by_label("Save cartridge").is_some());
+        assert!(harness.query_by_label("Cartridge header").is_some());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_dropped_file_that_is_not_a_rom_shows_an_error() {
+        let dir = temp_dir("studio-refuse");
+        let file = dir.join("notes.txt");
+        std::fs::write(&file, b"not a game").unwrap();
+
+        let mut harness = studio();
+        harness.step();
+        drop_and_wait(&mut harness, &file);
+
+        assert!(harness.query_by_label_contains("not a GBA ROM").is_some());
+        assert!(harness.query_by_label("Save cartridge").is_none());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn saved_files_decode_back_to_the_rom() {
+        let dir = temp_dir("studio-save");
+        let rom = demo::rom();
+        let encoded = gbadn_codec::encode(&rom).unwrap();
+
+        let compressed = dir.join("game.fasta.gz");
+        write_cartridge(&encoded, &compressed).unwrap();
+        let data = std::fs::read(&compressed).unwrap();
+        assert_eq!(&data[..2], &[0x1F, 0x8B]);
+        assert_eq!(gbadn_codec::decode_fasta(&data).unwrap(), rom);
+
+        let plain = dir.join("game.fasta");
+        write_cartridge(&encoded, &plain).unwrap();
+        let data = std::fs::read(&plain).unwrap();
+        assert_eq!(data[0], b'>');
+        assert_eq!(gbadn_codec::decode_fasta(&data).unwrap(), rom);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
