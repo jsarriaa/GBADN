@@ -2,16 +2,18 @@
 
 Goal: a GBA emulator that only reads FASTA genomic files, and a desktop UI that turns GBA ROMs into those files.
 
+Current release: **v0.1.0** (private), for Linux, Windows and macOS. Next step: Android (M6).
+
 Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` written and partly verified, with what's missing noted. `[ ]` not started.
 
 ## Decisions
 
 | Topic | Decision |
 |---|---|
-| Emulator | Wrap mGBA now; a from-scratch core is a long-term goal (M8) |
+| Emulator | Wrap mGBA now; a from-scratch core is a long-term goal (M9) |
 | Encoding | Chromosomes, zstd, then 2 bits per base, with an MD5 check; gzip over the FASTA |
-| Platform | Desktop first: Linux, then Windows and macOS; web later (M7) |
-| Repository | Private on GitHub; license chosen before going public |
+| Platform | Linux, Windows and macOS released; Android next (M6); web later (M8) |
+| Repository | Private on GitHub, so releases need repository access; license chosen before going public |
 
 ## M0: Foundations
 
@@ -58,22 +60,32 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 ## M5: Releases
 
-- [~] Linux, Windows and macOS builds and tests in CI: not yet tried by hand on Windows or macOS
-- [~] Packaged downloads: workflow written; no release published yet
-- [ ] Android: console with touch controls and a file picker
+- [x] Linux build: tests pass in CI, and the packaged console ran the demo
+- [~] Windows and macOS (Apple Silicon) builds: tests pass in CI; not yet opened by hand on those systems
+- [x] Version tags publish packaged downloads; v0.1.0 is the first
 - [ ] Pick a license and decide on going public
 
-## M6: Genome features (ideas)
+## M6: Android (next)
+
+- [ ] Build the console as an APK in CI, including mGBA for Android
+- [ ] On-screen touch controls
+- [ ] Open cartridges on the phone, since the desktop file dialog doesn't work there
+- [ ] Test on a real phone
+- [ ] Add the APK to releases
+
+Conversion stays on desktop: Android only plays cartridges.
+
+## M7: Genome features (ideas)
 
 - [ ] Saves stored as FASTA too
 - [ ] Mutation mode that corrupts games on purpose
 - [ ] Synthesis-ready encoding: no long single-base runs, balanced GC, error correction
 
-## M7: Web version
+## M8: Web version
 
 - [ ] Both programs in the browser through WebAssembly
 
-## M8: Our own emulator core
+## M9: Our own emulator core
 
 - [ ] Define a `Core` interface around the current API (`new`, `run_frame`, `video`, `read_audio`)
 - [ ] Build a from-scratch Rust core, using the mGBA tests as its benchmark
