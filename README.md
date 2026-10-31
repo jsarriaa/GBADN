@@ -7,7 +7,7 @@ GBADN has two programs:
 - **GBADN Console** (`gbadn-emu`) is a GBA emulator that only reads FASTA genomic files, plain or gzip-compressed. It refuses `.gba` files, and a ROM renamed to `.fasta` as well.
 - **GBADN Studio** (`gbadn-studio`) is a desktop app: drop a GBA ROM in and get a `.fasta.gz` file out.
 
-Current release: v0.1.0, for Linux, Windows and macOS. See [ROADMAP.md](ROADMAP.md) for what's verified and what's next.
+Current release: v0.2.0, for Linux, Windows, macOS and Android. See [ROADMAP.md](ROADMAP.md) for what's verified and what's next.
 
 ## How it works
 
@@ -19,15 +19,15 @@ The output is a real multi-record FASTA file with only `A`, `C`, `G` and `T`, an
 
 ### Chromosomes
 
-Each cartridge is split into `chrHeader`, `chrCode`, `chrGraphics`, `chrAudio`, `chrData` and `chrEmpty`, plus a `gbadn_layout` record that rebuilds the exact ROM. A GBA ROM has no table of contents, so apart from the header and empty space these labels are best guesses from the content; a wrong guess never affects the game. Pokemon Emerald, for example, splits into roughly 10% code, 10% compressed graphics, 26% sampled audio, 37% other data and 18% empty space.
+Each cartridge is split into `chrHeader`, `chrCode`, `chrGraphics`, `chrAudio`, `chrData` and `chrEmpty`, plus a `gbadn_layout` record that rebuilds the exact ROM. A GBA ROM has no table of contents, so apart from the header and empty space these labels are best guesses from the content; a wrong guess never affects the game. One 16 MiB game, for example, split into roughly 10% code, 10% compressed graphics, 26% sampled audio, 37% other data and 18% empty space.
 
 ### About "compress"
 
-Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is about 4 times the size of its zstd-compressed payload, and usually larger than the ROM. Cartridges are therefore gzip-compressed, like most genomic data: a 16 MiB Pokemon Emerald ROM becomes 24 MiB of FASTA, or 7.4 MiB as `.fasta.gz`. It stays real FASTA: `zcat game.fasta.gz` shows the sequence.
+Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is about 4 times the size of its zstd-compressed payload, and usually larger than the ROM. Cartridges are therefore gzip-compressed, like most genomic data: one 16 MiB ROM became 24 MiB of FASTA, or 7.4 MiB as `.fasta.gz`. It stays real FASTA: `zcat game.fasta.gz` shows the sequence.
 
 ## Download
 
-Linux, Windows and macOS (Apple Silicon) builds are on the [Releases](../../releases) page. The repository is private, so downloading needs access to it. Intel Macs and Android aren't covered yet.
+Linux, Windows, macOS (Apple Silicon) and Android (arm64) builds are on the [Releases](../../releases) page. Intel Macs aren't covered yet.
 
 Unpack the archive and keep both programs in the same folder. On Linux, you need ALSA and udev, which most desktop systems already have.
 
@@ -35,10 +35,11 @@ The builds aren't signed, so systems warn the first time:
 
 - **Windows:** choose **More info**, then **Run anyway**.
 - **macOS:** run `xattr -dr com.apple.quarantine <folder>` once on the unpacked folder.
+- **Android:** allow installing from your browser or file manager when asked. Android is console-only, so convert on a computer.
 
-## Android (in development)
+## Android
 
-`.github/workflows/android.yml` builds an arm64 APK of the console on pull requests that touch the app. Tap **Open cartridge** and choose a `.fasta.gz`: it's copied to the app's private storage, where its saves live too. Conversion stays on desktop. Android isn't in a release yet.
+Tap **Open cartridge** and choose a `.fasta.gz`. It's copied to the app's private storage, where its saves live too, so uninstalling the app deletes them.
 
 ## Build
 
@@ -105,4 +106,4 @@ GBADN includes no games. Only convert ROMs you have the right to use. A FASTA fi
 
 ## License
 
-Not chosen yet: the repository is private, and a license will be picked before it goes public. mGBA keeps its own MPL-2.0 license.
+GBADN's own code is under the [MIT License](LICENSE). [mGBA](https://mgba.io) keeps its own MPL-2.0 license, included with every download.

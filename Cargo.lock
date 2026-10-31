@@ -1428,7 +1428,7 @@ dependencies = [
 
 [[package]]
 name = "gbadn-codec"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "md-5",
@@ -1438,7 +1438,7 @@ dependencies = [
 
 [[package]]
 name = "gbadn-emu"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "android_logger",
  "cc",
@@ -1457,7 +1457,7 @@ dependencies = [
 
 [[package]]
 name = "gbadn-studio"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "eframe",
  "egui_kittest",

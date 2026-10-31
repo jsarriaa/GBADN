@@ -2,7 +2,7 @@
 
 Goal: a GBA emulator that only reads FASTA genomic files, and a desktop UI that turns GBA ROMs into those files.
 
-Current release: **v0.1.0** (private), for Linux, Windows and macOS. Next step: Android (M6).
+Current release: **v0.2.0**, for Linux, Windows, macOS and Android. Next step: browser version (M8).
 
 Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` written and partly verified, with what's missing noted. `[ ]` not started.
 
@@ -12,8 +12,8 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 |---|---|
 | Emulator | Wrap mGBA now; a from-scratch core is a long-term goal (M9) |
 | Encoding | Chromosomes, zstd, then 2 bits per base, with an MD5 check; gzip over the FASTA |
-| Platform | Linux, Windows and macOS released; Android next (M6); web later (M8) |
-| Repository | Private on GitHub, so releases need repository access; license chosen before going public |
+| Platform | Linux, Windows, macOS and Android released; browser next (M8) |
+| Repository | Going public on GitHub under the MIT license, hosting the browser version for free on Pages |
 
 ## M0: Foundations
 
@@ -62,10 +62,10 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 - [x] Linux build: tests pass in CI, and the packaged console ran the demo
 - [~] Windows and macOS (Apple Silicon) builds: tests pass in CI; not yet opened by hand on those systems
-- [x] Version tags publish packaged downloads; v0.1.0 is the first
-- [ ] Pick a license and decide on going public
+- [x] Version tags publish packaged downloads
+- [x] MIT license
 
-## M6: Android (next)
+## M6: Android
 
 - [x] Build the console as an arm64 APK in CI, including mGBA for Android
 - [~] On-screen touch controls: holding one button works on a real phone; several fingers tested only in unit tests
@@ -73,8 +73,8 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 - [x] Demo cartridge runs on a real phone (OnePlus 13R, Android 16), including save and load state
 - [ ] Play a real game on the phone, with sound, by hand
 - [ ] Check that a quick tap on the toolbar registers: a very short synthetic tap didn't, a 150 ms press did
-- [ ] Lasting signing key, so updates install over older versions
-- [ ] Add the APK to releases
+- [x] Lasting signing key, so updates install over older versions
+- [x] APK in releases, from v0.2.0
 
 Conversion stays on desktop: Android only plays cartridges.
 
@@ -84,9 +84,11 @@ Conversion stays on desktop: Android only plays cartridges.
 - [ ] Mutation mode that corrupts games on purpose
 - [ ] Synthesis-ready encoding: no long single-base runs, balanced GC, error correction
 
-## M8: Web version
+## M8: Browser version (next)
 
-- [ ] Both programs in the browser through WebAssembly
+- [ ] Console and converter in the browser through WebAssembly
+- [ ] Free hosting on GitHub Pages
+- [ ] Make the repository public
 
 ## M9: Our own emulator core
 
