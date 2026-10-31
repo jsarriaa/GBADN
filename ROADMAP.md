@@ -53,7 +53,7 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 - [ ] "Play" button in Studio
 - [ ] Command-line tool
 - [ ] Gamepad support and remappable keys
-- [ ] Save states
+- [x] Save states
 
 ## M5: Releases
 

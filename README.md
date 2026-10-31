@@ -58,7 +58,7 @@ Open Studio to convert a ROM you own:
 cargo run --release -p gbadn-studio
 ```
 
-Battery saves are written next to the cartridge, as `<name>.sav`.
+Battery saves are written next to the cartridge as `<name>.sav`, and save states as `<name>.state`. There is one save state per game, and saving replaces it.
 
 | GBA button | Key |
 |---|---|
@@ -66,6 +66,7 @@ Battery saves are written next to the cartridge, as `<name>.sav`.
 | A / B | Z / X |
 | L / R | A / S |
 | Start / Select | Enter / Backspace |
+| Save state / Load state | F5 / F9 |
 
 ## Repository layout
 

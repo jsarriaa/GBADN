@@ -5,6 +5,7 @@
 *.gba
 *.agb
 *.sav
+*.state
 *.fasta
 *.fa
 *.fna
