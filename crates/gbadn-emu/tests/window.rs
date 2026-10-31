@@ -3,12 +3,12 @@
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use eframe::egui::{DroppedFile, Key};
+use eframe::egui::{DroppedFile, Event, Key, TouchDeviceId, TouchId, TouchPhase};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 use gbadn_codec::{demo, encode};
-use gbadn_emu::WIDTH;
 use gbadn_emu::app::Console;
+use gbadn_emu::{WIDTH, keys};
 
 const TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -294,4 +294,91 @@ fn reset_restores_the_default_keys() {
 
     harness.get_by_label("Reset to defaults").click();
     step_until(&mut harness, |h| h.query_by_label("Enter").is_some());
+}
+
+fn touch_console() -> Harness<'static, Console> {
+    Harness::builder()
+        .with_size(eframe::egui::vec2(794.0, 361.0))
+        .build_ui_state(
+            |ui, console: &mut Console| console.show(ui),
+            Console::new(None).with_touch_controls(),
+        )
+}
+
+fn touch(harness: &mut Harness<'_, Console>, phase: TouchPhase, pos: eframe::egui::Pos2) {
+    harness.input_mut().events.push(Event::Touch {
+        device_id: TouchDeviceId(0),
+        id: TouchId(1),
+        phase,
+        pos,
+        force: None,
+    });
+}
+
+#[test]
+fn touch_controls_press_game_buttons() {
+    let dir = TempDir::new("window-touch");
+    let mut harness = touch_console();
+    drop_file(&mut harness, &demo_cartridge(&dir));
+    step_until(&mut harness, |h| {
+        shows_colour(h, green) && h.state().touch_position(keys::A).is_some()
+    });
+
+    let button = harness.state().touch_position(keys::A).unwrap();
+    touch(&mut harness, TouchPhase::Start, button);
+    step_until(&mut harness, |h| shows_colour(h, red));
+    touch(&mut harness, TouchPhase::End, button);
+    step_until(&mut harness, |h| shows_colour(h, green));
+}
+
+#[test]
+fn phones_have_no_key_screen_and_get_their_own_prompt() {
+    let mut harness = touch_console();
+    harness.step();
+    assert!(harness.query_by_label("Controls").is_none());
+    assert!(
+        harness
+            .query_by_label_contains("Tap Open cartridge")
+            .is_some()
+    );
+    assert!(harness.query_by_label_contains("Drop a").is_none());
+}
+
+#[test]
+fn a_platform_file_picker_is_asked_and_its_answer_opens() {
+    let dir = TempDir::new("window-picker");
+    let cartridge = demo_cartridge(&dir);
+    let answer = dir.0.join("pending_cartridge");
+    let asked = std::rc::Rc::new(std::cell::Cell::new(false));
+    let asked_by_picker = asked.clone();
+
+    let mut harness = Harness::new_ui_state(
+        |ui, console: &mut Console| console.show(ui),
+        Console::new(None)
+            .with_file_picker(Box::new(move || asked_by_picker.set(true)), answer.clone()),
+    );
+    harness.step();
+    harness.get_by_label("Open cartridge").click();
+    harness.step();
+    harness.step();
+    assert!(asked.get());
+
+    std::fs::write(&answer, cartridge.to_str().unwrap()).unwrap();
+    step_until(&mut harness, |h| shows_colour(h, green));
+    assert!(!answer.exists());
+}
+
+#[test]
+fn a_refused_name_from_the_picker_shows_why() {
+    let dir = TempDir::new("window-picker-refused");
+    let answer = dir.0.join("pending_cartridge");
+    let mut harness = Harness::new_ui_state(
+        |ui, console: &mut Console| console.show(ui),
+        Console::new(None).with_file_picker(Box::new(|| {}), answer.clone()),
+    );
+    harness.step();
+    std::fs::write(&answer, dir.0.join("game.gba").to_str().unwrap()).unwrap();
+    step_until(&mut harness, |h| {
+        h.query_by_label_contains("only reads FASTA").is_some()
+    });
 }

@@ -1,8 +1,11 @@
 //! The GBADN console: mGBA behind a loader that only accepts FASTA cartridges.
 
+#[cfg(target_os = "android")]
+mod android;
 pub mod app;
 pub mod audio;
 pub mod controls;
+pub mod touch;
 
 use std::ffi::{CString, c_char, c_int, c_void};
 use std::path::{Path, PathBuf};

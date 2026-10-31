@@ -9,6 +9,7 @@ use eframe::egui::{self, Color32, Key, RichText, TextureOptions};
 
 use crate::audio::Speaker;
 use crate::controls::{BUTTONS, Gamepads, KeyBindings, RESERVED_KEYS};
+use crate::touch::TouchControls;
 use crate::{Core, HEIGHT, LoadError, WIDTH, read_cartridge, save_path, state_path};
 
 /// The GBA refreshes at 16.777 MHz / 280896 cycles.
@@ -19,6 +20,7 @@ const MAX_FRAMES_PER_PAINT: u32 = 3;
 const SILENT_RATE: u32 = 48000;
 const SCREEN_ASPECT: f32 = WIDTH as f32 / HEIGHT as f32;
 
+const PICKER_POLL_INTERVAL: Duration = Duration::from_millis(250);
 const BINDINGS_SETTING: &str = "key_bindings";
 
 struct Cartridge {
@@ -46,6 +48,15 @@ pub struct Console {
     showing_controls: bool,
     /// The GBA button waiting for a new key.
     rebinding: Option<u32>,
+    touch: Option<TouchControls>,
+    /// Shows a platform's own file picker, in place of the desktop dialog.
+    file_picker: Option<FilePicker>,
+}
+
+/// A file picker that reports its choice later, by writing the path into a file.
+struct FilePicker {
+    ask: Box<dyn Fn()>,
+    answer: PathBuf,
 }
 
 impl Console {
@@ -62,7 +73,26 @@ impl Console {
             gamepads: None,
             showing_controls: false,
             rebinding: None,
+            touch: None,
+            file_picker: None,
         }
+    }
+
+    /// Shows on-screen buttons, for phones.
+    pub fn with_touch_controls(mut self) -> Self {
+        self.touch = Some(TouchControls::default());
+        self
+    }
+
+    /// Uses a platform's own file picker. `answer` is a file it writes the chosen path to.
+    pub fn with_file_picker(mut self, ask: Box<dyn Fn()>, answer: PathBuf) -> Self {
+        self.file_picker = Some(FilePicker { ask, answer });
+        self
+    }
+
+    /// Where a finger would press a button, for tests.
+    pub fn touch_position(&self, button: u32) -> Option<egui::Pos2> {
+        self.touch.as_ref()?.position_of(button)
     }
 
     /// Restores the player's keys from saved settings text.
@@ -103,6 +133,7 @@ impl Console {
         let ctx = ui.ctx().clone();
         self.finish_loading(&ctx);
 
+        self.take_picked_file(&ctx);
         let dropped = ctx.input(|i| i.raw.dropped_files.iter().find_map(|f| f.path.clone()));
         if let Some(path) = dropped {
             self.open(path, &ctx);
@@ -114,11 +145,16 @@ impl Console {
         let mut wants_load_state = ctx.input(|i| i.key_pressed(Key::F9));
         egui::Panel::top("toolbar").show(ui, |ui| {
             ui.horizontal(|ui| {
+                if self.touch.is_some() {
+                    ui.spacing_mut().button_padding = egui::vec2(14.0, 8.0);
+                }
                 let idle = self.loading.is_none();
                 wants_open = ui
                     .add_enabled(idle, egui::Button::new("Open cartridge"))
                     .clicked();
-                wants_controls = ui.button("Controls").clicked();
+                if self.touch.is_none() {
+                    wants_controls = ui.button("Controls").clicked();
+                }
                 if let Some(cartridge) = &self.cartridge {
                     wants_close = ui.button("Close").clicked();
                     wants_save_state |= ui.button("Save state").clicked();
@@ -138,12 +174,8 @@ impl Console {
             });
         });
 
-        if wants_open
-            && let Some(path) = rfd::FileDialog::new()
-                .add_filter("FASTA cartridge", &["gz", "fasta", "fa", "fna"])
-                .pick_file()
-        {
-            self.open(path, &ctx);
+        if wants_open {
+            self.pick_file(&ctx);
         }
         if wants_save_state {
             self.save_state();
@@ -172,6 +204,39 @@ impl Console {
                 .show(ui, |ui| self.draw_screen(ui));
         } else {
             egui::CentralPanel::default().show(ui, |ui| self.start_screen(ui));
+        }
+    }
+
+    fn pick_file(&mut self, ctx: &egui::Context) {
+        if let Some(picker) = &self.file_picker {
+            (picker.ask)();
+            return;
+        }
+        #[cfg(not(target_os = "android"))]
+        if let Some(path) = rfd::FileDialog::new()
+            .add_filter("FASTA cartridge", &["gz", "fasta", "fa", "fna"])
+            .pick_file()
+        {
+            self.open(path, ctx);
+        }
+        #[cfg(target_os = "android")]
+        let _ = ctx;
+    }
+
+    /// Opens whatever a platform's file picker has chosen since the last paint.
+    fn take_picked_file(&mut self, ctx: &egui::Context) {
+        let Some(picker) = &self.file_picker else {
+            return;
+        };
+        // Nothing else wakes an idle window when a picked file finishes copying.
+        ctx.request_repaint_after(PICKER_POLL_INTERVAL);
+        if self.loading.is_some() {
+            return;
+        }
+        let answer = picker.answer.clone();
+        if let Ok(path) = std::fs::read_to_string(&answer) {
+            let _ = std::fs::remove_file(&answer);
+            self.open(PathBuf::from(path), ctx);
         }
     }
 
@@ -268,7 +333,11 @@ impl Console {
         });
         let keyboard = ctx.input(|input| self.bindings.pressed(|key| input.key_down(key)));
         let gamepad = self.gamepads.as_mut().map_or(0, Gamepads::pressed);
-        let pressed = keyboard | gamepad;
+        let touch = self.touch.as_mut().map_or(0, |touch| {
+            touch.update(ctx);
+            touch.pressed()
+        });
+        let pressed = keyboard | gamepad | touch;
 
         let now = Instant::now();
         let mut frames = 0;
@@ -374,6 +443,10 @@ impl Console {
             ui.add_space(48.0);
             ui.heading("GBADN Console");
             ui.add_space(8.0);
+            if self.touch.is_some() {
+                ui.label("Tap Open cartridge and choose a .fasta.gz file.");
+                return;
+            }
             ui.label("Drop a .fasta.gz cartridge here, or open one above.");
             ui.add_space(24.0);
             ui.label(RichText::new("Keys").strong());
@@ -384,7 +457,7 @@ impl Console {
         });
     }
 
-    fn draw_screen(&self, ui: &mut egui::Ui) {
+    fn draw_screen(&mut self, ui: &mut egui::Ui) {
         let Some(cartridge) = &self.cartridge else {
             return;
         };
@@ -399,6 +472,9 @@ impl Console {
             whole_texture,
             Color32::WHITE,
         );
+        if let Some(touch) = &mut self.touch {
+            touch.draw(ui.painter(), area);
+        }
     }
 }
 

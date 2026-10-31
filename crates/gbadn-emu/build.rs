@@ -17,7 +17,19 @@ fn main() {
         "mGBA is missing, run: git submodule update --init"
     );
 
-    let out = cmake::Config::new(&mgba)
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
+    let mut config = cmake::Config::new(&mgba);
+    if target_os == "android" {
+        let ndk = env::var("ANDROID_NDK_HOME").expect("Android builds need ANDROID_NDK_HOME");
+        config
+            .define(
+                "CMAKE_TOOLCHAIN_FILE",
+                format!("{ndk}/build/cmake/android.toolchain.cmake"),
+            )
+            .define("ANDROID_ABI", "arm64-v8a")
+            .define("ANDROID_PLATFORM", "android-26");
+    }
+    let out = config
         // CMake 4 refuses mGBA's declared minimum version without this.
         .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
         .define("LIBMGBA_ONLY", "ON")
@@ -42,11 +54,12 @@ fn main() {
         build.join("Release").display()
     );
     println!("cargo:rustc-link-lib=static=mgba");
-    match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
+    match target_os.as_str() {
         "windows" => {
             println!("cargo:rustc-link-lib=ws2_32");
             println!("cargo:rustc-link-lib=shlwapi");
         }
+        "android" => println!("cargo:rustc-link-lib=m"),
         _ => {
             println!("cargo:rustc-link-lib=m");
             println!("cargo:rustc-link-lib=pthread");

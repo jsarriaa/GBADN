@@ -1,0 +1,27 @@
+name: Android
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android.yml
+      - android/**
+      - scripts/build-android.sh
+      - crates/**
+      - Cargo.lock
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@1.94.1
+        with:
+          targets: aarch64-linux-android
+      - run: scripts/build-android.sh target/gbadn-console.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gbadn-console-apk
+          path: target/gbadn-console.apk
+          if-no-files-found: error
