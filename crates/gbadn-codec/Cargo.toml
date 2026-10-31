@@ -4,6 +4,7 @@ description = "Encode GBA ROMs as FASTA DNA sequences and decode them back"
 version.workspace = true
 edition.workspace = true
 publish.workspace = true
+license.workspace = true
 
 [dependencies]
 flate2 = "1"

@@ -1,4 +1,6 @@
 /target/
+*.apk
+*.jks
 
 # Never commit games. A FASTA encoded from a ROM is still that ROM,
 # so generated sequences are ignored too; only the original demo is allowed.

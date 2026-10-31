@@ -8,13 +8,14 @@ GBADN is a GBA emulator that only reads FASTA genomic files, plus a desktop UI t
 - Merge only after CI passes and the project owner has reviewed the PR.
 - Commit, push and open PRs as part of this flow, on a task branch. Leave merging to the project owner.
 - Use imperative commit subjects that say what changes, such as `Add gamepad support`.
+- Commit with the repository-local noreply address, never a personal or work email: the repository is meant to be public.
 - Merge stacked PRs in order with merge commits, retargeting each to `main` before merging it. `gh pr edit --base` can fail on a GitHub API error, leaving a PR on its old base, so use `gh api -X PATCH repos/jsarriaa/GBADN/pulls/<number> -f base=main` and confirm the base changed.
 
 ## Releases
 
 - Pushing a `v*` tag from `main` builds Linux, Windows and macOS, runs all tests on each, and publishes a GitHub release. Tag only when the project owner asks.
 - Keep the version in `Cargo.toml` matching the tag, and update `ROADMAP.md` and the README's current release in the PR before tagging.
-- The repository is private, so releases need repository access. Don't change its visibility, or add a license, without the project owner's decision.
+- Don't change the repository's visibility or license without the project owner's decision.
 - Pull requests only run the release builds when they touch the workflow, `build.rs`, the shim or `Cargo.lock`, because Windows and macOS minutes cost more on a private repository.
 - Windows and macOS can't be run from the main development machine. Passing CI there isn't the same as trying them, so say which one you've done.
 
@@ -36,6 +37,14 @@ If a step could not be done, leave the item as `[~]` and note what's missing. Ne
 - **Format changes are deliberate.** Anything that alters the sequence needs a version bump and an update to `docs/FORMAT.md`, and `samples/demo.fasta` must be regenerated.
 - **Chromosome labels are best guesses.** Say so wherever they're shown. The classifier may change freely as long as the ROM rebuilds exactly.
 - **Be honest about size.** FASTA output is usually larger than the ROM; don't describe it as smaller on disk.
+
+## Android
+
+- APKs build in GitHub Actions. Don't install an SDK, NDK or JDK on a machine unless its owner agrees.
+- To test: `gh run download <run-id>`, `adb install -r <apk>`, `adb logcat`, and `adb exec-out screencap -p`. Builds with access to the repository's secrets share a lasting signature, so updates install in place.
+- The signing key lives in the secrets `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`, and its owner keeps a backup. Never commit it. Losing it means users must uninstall to update, losing their saves. Release tags refuse to build without it.
+- Rust panics go to `adb logcat` under the tag `gbadn`.
+- Keep Android-only code in `crates/gbadn-emu/src/android.rs` and `android/`. The console takes touch controls and the file picker as options, so desktop tests can cover them.
 
 ## Commands
 

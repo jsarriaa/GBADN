@@ -1,0 +1,37 @@
+name: Android
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/android.yml
+      - android/**
+      - scripts/build-android.sh
+      - crates/**
+      - Cargo.lock
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@1.94.1
+        with:
+          targets: aarch64-linux-android
+      - name: Load the signing key
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE" ]; then
+            echo "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/gbadn.jks"
+            echo "ANDROID_KEYSTORE=$RUNNER_TEMP/gbadn.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+          fi
+      - run: scripts/build-android.sh target/gbadn-console.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gbadn-console-apk
+          path: target/gbadn-console.apk
+          if-no-files-found: error
