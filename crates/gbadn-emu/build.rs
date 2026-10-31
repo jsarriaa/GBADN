@@ -21,6 +21,7 @@ fn main() {
         .define("LIBMGBA_ONLY", "ON")
         .define("M_CORE_GBA", "ON")
         .define("M_CORE_GB", "OFF")
+        .profile("Release")
         .build_target("mgba")
         .build();
     let build = out.join("build");
@@ -33,6 +34,11 @@ fn main() {
         .compile("gbadn_shim");
 
     println!("cargo:rustc-link-search=native={}", build.display());
+    // Visual Studio generators put libraries in a folder named after the profile.
+    println!(
+        "cargo:rustc-link-search=native={}",
+        build.join("Release").display()
+    );
     println!("cargo:rustc-link-lib=static=mgba");
     match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
         "windows" => {
