@@ -1,5 +1,6 @@
 //! The console window: open a cartridge, play it, close it.
 
+use std::io::ErrorKind;
 use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, channel};
 use std::time::{Duration, Instant};
@@ -7,7 +8,7 @@ use std::time::{Duration, Instant};
 use eframe::egui::{self, Color32, Key, RichText, TextureOptions};
 use sdl2::audio::AudioQueue;
 
-use crate::{Core, HEIGHT, LoadError, WIDTH, keys, read_cartridge, save_path};
+use crate::{Core, HEIGHT, LoadError, WIDTH, keys, read_cartridge, save_path, state_path};
 
 /// The GBA refreshes at 16.777 MHz / 280896 cycles.
 const FRAME_TIME: Duration = Duration::from_nanos(16_742_706);
@@ -32,6 +33,7 @@ const KEYMAP: [(Key, u32); 10] = [
 
 struct Cartridge {
     core: Core,
+    path: PathBuf,
     title: String,
     texture: egui::TextureHandle,
     next_frame: Instant,
@@ -45,6 +47,7 @@ pub struct Console {
     cartridge: Option<Cartridge>,
     loading: Option<Loading>,
     error: Option<String>,
+    notice: Option<String>,
     audio: Option<AudioQueue<i16>>,
     samples: Vec<i16>,
 }
@@ -56,6 +59,7 @@ impl Console {
             cartridge: None,
             loading: None,
             error: None,
+            notice: None,
             audio,
             samples: vec![0; 4096],
         }
@@ -74,6 +78,7 @@ impl Console {
             ctx.request_repaint();
         });
         self.error = None;
+        self.notice = None;
         self.loading = Some((path, receiver));
     }
 
@@ -92,6 +97,8 @@ impl Console {
         }
 
         let (mut wants_open, mut wants_close) = (false, false);
+        let mut wants_save_state = ctx.input(|i| i.key_pressed(Key::F5));
+        let mut wants_load_state = ctx.input(|i| i.key_pressed(Key::F9));
         egui::Panel::top("toolbar").show(ui, |ui| {
             ui.horizontal(|ui| {
                 let idle = self.loading.is_none();
@@ -100,11 +107,16 @@ impl Console {
                     .clicked();
                 if let Some(cartridge) = &self.cartridge {
                     wants_close = ui.button("Close").clicked();
+                    wants_save_state |= ui.button("Save state").clicked();
+                    wants_load_state |= ui.button("Load state").clicked();
                     ui.label(RichText::new(&cartridge.title).strong());
                 }
                 if self.loading.is_some() {
                     ui.spinner();
                     ui.label("Reading the sequence");
+                }
+                if let Some(notice) = &self.notice {
+                    ui.label(notice);
                 }
                 if let Some(error) = &self.error {
                     ui.colored_label(Color32::LIGHT_RED, error);
@@ -119,8 +131,15 @@ impl Console {
         {
             self.open(path, &ctx);
         }
+        if wants_save_state {
+            self.save_state();
+        }
+        if wants_load_state {
+            self.load_state();
+        }
         if wants_close {
             self.cartridge = None;
+            self.notice = None;
             ctx.send_viewport_cmd(egui::ViewportCommand::Title("GBADN Console".into()));
         }
 
@@ -164,12 +183,54 @@ impl Console {
                 let blank = egui::ColorImage::filled([WIDTH, HEIGHT], Color32::BLACK);
                 self.cartridge = Some(Cartridge {
                     core,
+                    path,
                     title,
                     texture: ctx.load_texture("screen", blank, TextureOptions::NEAREST),
                     next_frame: Instant::now(),
                 });
             }
             Err(error) => self.error = Some(error.to_string()),
+        }
+    }
+
+    fn save_state(&mut self) {
+        let Some(cartridge) = &mut self.cartridge else {
+            return;
+        };
+        let path = state_path(&cartridge.path);
+        let written = cartridge
+            .core
+            .save_state()
+            .ok_or_else(|| "the console could not capture a state".to_string())
+            .and_then(|state| std::fs::write(&path, state).map_err(|e| e.to_string()));
+        self.report_state_result(written.map(|()| "State saved"), "Could not save the state");
+    }
+
+    fn load_state(&mut self) {
+        let Some(cartridge) = &mut self.cartridge else {
+            return;
+        };
+        let loaded = match std::fs::read(state_path(&cartridge.path)) {
+            Ok(state) if cartridge.core.load_state(&state) => Ok("State loaded"),
+            Ok(_) => Err("it is damaged or belongs to another game".to_string()),
+            Err(error) if error.kind() == ErrorKind::NotFound => {
+                Err("there is no saved state for this game yet".to_string())
+            }
+            Err(error) => Err(error.to_string()),
+        };
+        self.report_state_result(loaded, "Could not load the state");
+    }
+
+    fn report_state_result(&mut self, result: Result<&str, String>, failure: &str) {
+        match result {
+            Ok(message) => {
+                self.notice = Some(message.to_string());
+                self.error = None;
+            }
+            Err(reason) => {
+                self.notice = None;
+                self.error = Some(format!("{failure}: {reason}"));
+            }
         }
     }
 
@@ -259,5 +320,6 @@ fn start_screen(ui: &mut egui::Ui) {
         ui.label(RichText::new("Controls").strong());
         ui.label("D-pad: arrows    A / B: Z / X    L / R: A / S");
         ui.label("Start: Enter    Select: Backspace");
+        ui.label("Save state: F5    Load state: F9");
     });
 }

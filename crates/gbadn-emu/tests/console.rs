@@ -3,7 +3,7 @@
 use gbadn_codec::{decode_fasta, demo, encode};
 use std::path::{Path, PathBuf};
 
-use gbadn_emu::{Core, LoadError, WIDTH, keys, read_cartridge, save_path};
+use gbadn_emu::{Core, LoadError, WIDTH, keys, read_cartridge, save_path, state_path};
 
 fn boot_demo() -> Core {
     let fasta = encode(&demo::rom()).unwrap().fasta;
@@ -76,6 +76,50 @@ fn compressed_and_plain_cartridges_share_a_save() {
     assert_eq!(save_path(Path::new("/saves/game.fasta")), expected);
     assert_eq!(save_path(Path::new("/saves/game.fasta.gz")), expected);
     assert_eq!(save_path(Path::new("/saves/game.FA.GZ")), expected);
+}
+
+#[test]
+fn saves_and_states_sit_beside_the_cartridge() {
+    assert_eq!(
+        state_path(Path::new("/saves/game.fasta.gz")),
+        PathBuf::from("/saves/game.state")
+    );
+}
+
+#[test]
+fn a_state_restores_the_whole_console() {
+    let mut core = boot_demo();
+    for _ in 0..5 {
+        core.run_frame(0);
+    }
+    let state = core.save_state().unwrap();
+
+    for _ in 0..5 {
+        core.run_frame(keys::A);
+    }
+    assert_ne!(core.save_state().unwrap(), state);
+
+    assert!(core.load_state(&state));
+    assert_eq!(core.save_state().unwrap(), state);
+}
+
+#[test]
+fn damaged_states_are_refused() {
+    let mut core = boot_demo();
+    let state = core.save_state().unwrap();
+    assert!(!core.load_state(&state[..state.len() / 2]));
+    assert!(!core.load_state(&[]));
+}
+
+#[test]
+fn a_state_from_another_game_is_refused() {
+    let mut core = boot_demo();
+    let state = core.save_state().unwrap();
+
+    let mut other_rom = demo::rom();
+    other_rom[0xAC..0xB0].copy_from_slice(b"XXXX");
+    let mut other = Core::new(&other_rom, None).unwrap();
+    assert!(!other.load_state(&state));
 }
 
 #[test]
