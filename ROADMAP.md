@@ -50,7 +50,7 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 ## M4: Everyday use
 
-- [ ] "Play" button in Studio
+- [~] "Play" button in Studio: button and missing-console message tested; launching the real console not yet tried by hand
 - [ ] Command-line tool
 - [x] Remappable keys, remembered between sessions
 - [~] Gamepad support: button mapping tested; not yet tried with a physical gamepad
