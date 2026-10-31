@@ -18,6 +18,8 @@ fn main() {
     );
 
     let out = cmake::Config::new(&mgba)
+        // CMake 4 refuses mGBA's declared minimum version without this.
+        .define("CMAKE_POLICY_VERSION_MINIMUM", "3.5")
         .define("LIBMGBA_ONLY", "ON")
         .define("M_CORE_GBA", "ON")
         .define("M_CORE_GB", "OFF")
