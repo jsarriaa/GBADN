@@ -205,3 +205,93 @@ fn a_damaged_state_is_refused_and_the_game_keeps_running() {
     });
     assert!(harness.state().screen().is_some());
 }
+
+fn open_controls(harness: &mut Harness<'_, Console>) {
+    harness.get_by_label("Controls").click();
+    step_until(harness, |h| h.query_by_label("Done").is_some());
+}
+
+fn close_controls(harness: &mut Harness<'_, Console>) {
+    harness.get_by_label("Done").click();
+    step_until(harness, |h| h.query_by_label("Done").is_none());
+}
+
+#[test]
+fn a_remapped_key_plays_and_the_old_one_stops() {
+    let dir = TempDir::new("window-remap");
+    let mut harness = console();
+    drop_file(&mut harness, &demo_cartridge(&dir));
+    step_until(&mut harness, |h| shows_colour(h, green));
+
+    open_controls(&mut harness);
+    harness.get_by_label("Enter").click();
+    step_until(&mut harness, |h| h.query_by_label("Press a key").is_some());
+    harness.key_press(Key::Q);
+    step_until(&mut harness, |h| h.query_by_label("Q").is_some());
+    close_controls(&mut harness);
+
+    harness.key_down(Key::Q);
+    step_until(&mut harness, |h| shows_colour(h, red));
+    harness.key_up(Key::Q);
+    step_until(&mut harness, |h| shows_colour(h, green));
+
+    harness.key_down(Key::Enter);
+    for _ in 0..30 {
+        harness.step();
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert!(shows_colour(&harness, green));
+}
+
+#[test]
+fn escape_cancels_and_reserved_keys_are_ignored_while_remapping() {
+    let mut harness = console();
+    harness.step();
+    open_controls(&mut harness);
+    harness.get_by_label("Enter").click();
+    step_until(&mut harness, |h| h.query_by_label("Press a key").is_some());
+
+    harness.key_press(Key::F5);
+    harness.step();
+    harness.step();
+    assert!(harness.query_by_label("Press a key").is_some());
+
+    harness.key_press(Key::Escape);
+    step_until(&mut harness, |h| h.query_by_label("Press a key").is_none());
+    assert!(harness.query_by_label("Enter").is_some());
+}
+
+#[test]
+fn the_game_pauses_while_controls_are_open() {
+    let dir = TempDir::new("window-pause");
+    let mut harness = console();
+    drop_file(&mut harness, &demo_cartridge(&dir));
+    step_until(&mut harness, |h| shows_colour(h, green));
+
+    open_controls(&mut harness);
+    harness.key_down(Key::Z);
+    for _ in 0..30 {
+        harness.step();
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert!(shows_colour(&harness, green));
+
+    harness.key_up(Key::Z);
+    close_controls(&mut harness);
+    harness.key_down(Key::Z);
+    step_until(&mut harness, |h| shows_colour(h, red));
+}
+
+#[test]
+fn reset_restores_the_default_keys() {
+    let mut harness = console();
+    harness.step();
+    open_controls(&mut harness);
+    harness.get_by_label("Enter").click();
+    step_until(&mut harness, |h| h.query_by_label("Press a key").is_some());
+    harness.key_press(Key::Q);
+    step_until(&mut harness, |h| h.query_by_label("Q").is_some());
+
+    harness.get_by_label("Reset to defaults").click();
+    step_until(&mut harness, |h| h.query_by_label("Enter").is_some());
+}

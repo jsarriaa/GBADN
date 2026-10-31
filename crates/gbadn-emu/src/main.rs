@@ -3,7 +3,8 @@
 use std::path::PathBuf;
 
 use eframe::egui;
-use gbadn_emu::app::Console;
+use gbadn_emu::app::{Console, saved_bindings};
+use gbadn_emu::controls::Gamepads;
 use gbadn_emu::{AUDIO_RATE, HEIGHT, WIDTH};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
 
@@ -23,7 +24,9 @@ fn main() -> eframe::Result {
         "GBADN Console",
         options,
         Box::new(move |cc| {
-            let mut console = Console::new(open_audio());
+            let mut console = Console::new(open_audio())
+                .with_saved_bindings(&saved_bindings(cc.storage))
+                .with_gamepads(Gamepads::new());
             if let Some(path) = cartridge {
                 console.open(path, &cc.egui_ctx);
             }
