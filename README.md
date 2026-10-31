@@ -36,7 +36,13 @@ If you cloned without submodules, run `git submodule update --init`.
 
 ## Run
 
-Try it with the included demo, a tiny original program that shows a green screen, turning red while a button is held:
+Open the console, then click **Open cartridge** or drop a `.fasta.gz` onto the window:
+
+```sh
+cargo run --release -p gbadn-emu
+```
+
+You can also pass a cartridge directly. The included demo is a tiny original program that shows a green screen, turning red while a button is held:
 
 ```sh
 cargo run --release -p gbadn-emu -- samples/demo.fasta
@@ -56,14 +62,13 @@ Battery saves are written next to the cartridge, as `<name>.sav`.
 | A / B | Z / X |
 | L / R | A / S |
 | Start / Select | Enter / Backspace |
-| Quit | Esc |
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
 | `crates/gbadn-codec` | The ROM to FASTA format, shared by both programs |
-| `crates/gbadn-emu` | The console: FASTA-only loader, SDL2 frontend, C shim over mGBA |
+| `crates/gbadn-emu` | The console: FASTA-only loader, egui window, SDL2 sound, C shim over mGBA |
 | `crates/gbadn-studio` | The desktop UI |
 | `vendor/mgba` | [mGBA](https://mgba.io) 0.10.5 as a git submodule (MPL-2.0) |
 | `samples/demo.fasta` | The original demo cartridge |

@@ -34,14 +34,15 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 - [x] mGBA builds as a static library through Cargo
 - [x] Headless tests: boots a FASTA cartridge, draws the expected colours, reads buttons, produces audio
 - [x] Refuses `.gba` files, renamed ROMs and real genomes with clear messages
-- [~] Window: stays open with the demo; picture not yet confirmed by eye
-- [~] Keyboard and sound: core input and audio tested headlessly; not yet tried in the window
+- [~] Console window: opens empty, then takes a cartridge through a button or drag and drop, shows refusals, plays and closes. Tested by driving the UI; the file picker and on-screen picture not yet confirmed by eye
+- [~] Keyboard and sound: keyboard tested through the window; sound not yet confirmed by ear
+- [x] mGBA debug logs silenced
 - [~] Battery saves: `.sav` file is created; save and reload not yet tested
 - [ ] Play a real game from start to save and reload
 
 ## M3: Studio
 
-- [~] Window launches; drag and drop, file picker, report and save written but not exercised
+- [~] Drag and drop, report and file writing tested by driving the UI; file picker and save dialog not yet tested automatically
 - [ ] Convert a ROM in Studio and play the saved FASTA in the console
 - [ ] Progress and responsiveness with a 32 MiB ROM
 
