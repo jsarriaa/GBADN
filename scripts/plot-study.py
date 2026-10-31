@@ -228,8 +228,8 @@ def circos_plot(tables, folder, name):
             r2=68,
         )
 
-    figure = circos.plotfig(figsize=(9.5, 10.4))
-    figure.axes[0].set_position((0.08, 0.06, 0.84, 0.78))
+    figure = circos.plotfig(figsize=(9.5, 11))
+    figure.axes[0].set_position((0.08, 0.05, 0.84, 0.76))
     heading(
         figure,
         f"Circos plot of {name}",
