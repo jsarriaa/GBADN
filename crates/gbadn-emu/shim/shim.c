@@ -7,6 +7,7 @@
 #include <mgba/core/blip_buf.h>
 #include <mgba/core/config.h>
 #include <mgba/core/core.h>
+#include <mgba/core/log.h>
 #include <mgba-util/vfs.h>
 
 #define GBA_WIDTH 240
@@ -24,7 +25,22 @@ struct gbadn_core {
 	color_t video[GBA_WIDTH * GBA_HEIGHT];
 };
 
+static void _silentLog(struct mLogger* logger, int category, enum mLogLevel level, const char* format, va_list args) {
+	UNUSED(logger);
+	UNUSED(category);
+	UNUSED(level);
+	UNUSED(format);
+	UNUSED(args);
+}
+
+static struct mLogger _silentLogger = {
+	.log = _silentLog,
+};
+
 struct gbadn_core* gbadn_core_new(const uint8_t* rom, size_t size, const char* save_path, int* status) {
+	/* mGBA logs every emulated hardware event to the terminal unless told otherwise. */
+	mLogSetDefaultLogger(&_silentLogger);
+
 	/* The ROM stays in memory: this copy is owned by the core and is never written to disk. */
 	struct VFile* vf = VFileMemChunk(rom, size);
 	if (!vf) {

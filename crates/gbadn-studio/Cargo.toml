@@ -9,3 +9,6 @@ publish.workspace = true
 eframe = "0.35"
 gbadn-codec = { path = "../gbadn-codec" }
 rfd = "0.15"
+
+[dev-dependencies]
+egui_kittest = "0.35"
