@@ -17,10 +17,8 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 - [x] Repository layout and Rust workspace, with mGBA pinned at 0.10.5
 - [x] README, ROADMAP, CLAUDE.md, format specification
-- [~] CI workflow: written, has not run on GitHub yet
-- [ ] Set up git identity and GitHub access
-- [ ] Create the private GitHub repository and push the first commit
-- [ ] Confirm CI passes on GitHub
+- [x] CI workflow, passing on GitHub
+- [x] Private GitHub repository
 
 ## M1: Format v1
 
@@ -28,6 +26,7 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 - [x] MD5 check; point mutations, truncation and non-cartridge FASTA are detected
 - [x] Lowercase and CRLF sequences accepted
 - [x] Original demo cartridge in `samples/demo.fasta`
+- [x] Gzip-compressed cartridges (`.fasta.gz`), including `bgzip` files
 - [ ] Validate output with an external FASTA tool (samtools)
 
 ## M2: FASTA-only console

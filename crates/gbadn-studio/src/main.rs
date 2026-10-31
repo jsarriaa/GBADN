@@ -68,15 +68,24 @@ impl Studio {
         let State::Ready(path, encoded) = &self.state else {
             return;
         };
-        let name = Path::new(path.file_stem().unwrap_or_default()).with_extension("fasta");
+        let name = Path::new(path.file_stem().unwrap_or_default()).with_extension("fasta.gz");
         let target = rfd::FileDialog::new()
             .set_file_name(name.to_string_lossy())
+            .add_filter("Compressed FASTA", &["gz"])
             .add_filter("FASTA", &["fasta", "fa", "fna"])
             .save_file();
         let Some(target) = target else {
             return;
         };
-        match std::fs::write(&target, &encoded.fasta) {
+        let is_gzip = target
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("gz"));
+        let contents = if is_gzip {
+            encoded.fasta_gz.as_slice()
+        } else {
+            encoded.fasta.as_bytes()
+        };
+        match std::fs::write(&target, contents) {
             Ok(()) => self.saved_to = Some(target),
             Err(error) => self.state = State::Failed(format!("could not save: {error}")),
         }
@@ -142,7 +151,7 @@ impl eframe::App for Studio {
                 State::Ready(_, encoded) => {
                     report(ui, encoded);
                     ui.add_space(8.0);
-                    wants_save = ui.button("Save FASTA").clicked();
+                    wants_save = ui.button("Save cartridge").clicked();
                 }
             }
             if wants_save {
@@ -166,7 +175,8 @@ fn report(ui: &mut egui::Ui, encoded: &Encoded) {
         let rows = [
             ("ROM", format_bytes(encoded.rom_size)),
             ("After zstd", format_bytes(encoded.payload_size)),
-            ("FASTA file", format_bytes(encoded.fasta.len())),
+            ("FASTA", format_bytes(encoded.fasta.len())),
+            ("FASTA + gzip", format_bytes(encoded.fasta_gz.len())),
             (
                 "Sequence",
                 format!(
