@@ -12,7 +12,6 @@
 
 #define GBA_WIDTH 240
 #define GBA_HEIGHT 160
-#define AUDIO_RATE 48000
 
 enum {
 	GBADN_OK = 0,
@@ -68,7 +67,6 @@ struct gbadn_core* gbadn_core_new(const uint8_t* rom, size_t size, const char* s
 	struct mCoreOptions options = {
 		.useBios = false,
 		.audioBuffers = 2048,
-		.sampleRate = AUDIO_RATE,
 		.volume = 0x100,
 	};
 	mCoreConfigLoadDefaults(&core->config, &options);
@@ -125,12 +123,12 @@ const uint32_t* gbadn_core_video(const struct gbadn_core* handle) {
 	return handle->video;
 }
 
-size_t gbadn_core_read_audio(struct gbadn_core* handle, int16_t* stereo, size_t max_frames) {
+size_t gbadn_core_read_audio(struct gbadn_core* handle, int16_t* stereo, size_t max_frames, int rate) {
 	struct mCore* core = handle->core;
 	struct blip_t* left = core->getAudioChannel(core, 0);
 	struct blip_t* right = core->getAudioChannel(core, 1);
-	blip_set_rates(left, core->frequency(core), AUDIO_RATE);
-	blip_set_rates(right, core->frequency(core), AUDIO_RATE);
+	blip_set_rates(left, core->frequency(core), rate);
+	blip_set_rates(right, core->frequency(core), rate);
 
 	size_t available = blip_samples_avail(left);
 	size_t frames = available < max_frames ? available : max_frames;

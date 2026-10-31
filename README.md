@@ -27,10 +27,10 @@ Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is
 
 ## Build
 
-You need Rust 1.92 or newer, a C compiler, CMake and the SDL2 development package. On Ubuntu:
+You need Rust 1.92 or newer, a C compiler and CMake. On Ubuntu:
 
 ```sh
-sudo apt install build-essential cmake libsdl2-dev libudev-dev
+sudo apt install build-essential cmake libasound2-dev libudev-dev
 git clone --recurse-submodules <repository-url>
 cd GBADN
 cargo build --release
@@ -76,7 +76,7 @@ Keys can be changed under **Controls**, and your choices are remembered. Gamepad
 | Path | Contents |
 |---|---|
 | `crates/gbadn-codec` | The ROM to FASTA format, shared by both programs |
-| `crates/gbadn-emu` | The console: FASTA-only loader, egui window, SDL2 sound, C shim over mGBA |
+| `crates/gbadn-emu` | The console: FASTA-only loader, egui window, cpal sound, gilrs gamepads, C shim over mGBA |
 | `crates/gbadn-studio` | The desktop UI |
 | `vendor/mgba` | [mGBA](https://mgba.io) 0.10.5 as a git submodule (MPL-2.0) |
 | `samples/demo.fasta` | The original demo cartridge |

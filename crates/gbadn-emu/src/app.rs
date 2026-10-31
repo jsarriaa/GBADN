@@ -6,8 +6,8 @@ use std::sync::mpsc::{Receiver, channel};
 use std::time::{Duration, Instant};
 
 use eframe::egui::{self, Color32, Key, RichText, TextureOptions};
-use sdl2::audio::AudioQueue;
 
+use crate::audio::Speaker;
 use crate::controls::{BUTTONS, Gamepads, KeyBindings, RESERVED_KEYS};
 use crate::{Core, HEIGHT, LoadError, WIDTH, read_cartridge, save_path, state_path};
 
@@ -15,8 +15,8 @@ use crate::{Core, HEIGHT, LoadError, WIDTH, read_cartridge, save_path, state_pat
 const FRAME_TIME: Duration = Duration::from_nanos(16_742_706);
 /// After a longer stall the game skips ahead rather than racing to catch up.
 const MAX_FRAMES_PER_PAINT: u32 = 3;
-/// Audio queued beyond this is dropped so sound never lags behind the picture.
-const MAX_QUEUED_AUDIO_BYTES: u32 = 48000 / 5 * 4;
+/// Sound is still produced without a speaker, so the core's buffers don't fill.
+const SILENT_RATE: u32 = 48000;
 const SCREEN_ASPECT: f32 = WIDTH as f32 / HEIGHT as f32;
 
 const BINDINGS_SETTING: &str = "key_bindings";
@@ -38,7 +38,7 @@ pub struct Console {
     loading: Option<Loading>,
     error: Option<String>,
     notice: Option<String>,
-    audio: Option<AudioQueue<i16>>,
+    speaker: Option<Speaker>,
     samples: Vec<i16>,
     bindings: KeyBindings,
     gamepads: Option<Gamepads>,
@@ -49,14 +49,14 @@ pub struct Console {
 }
 
 impl Console {
-    /// `audio` is optional because a machine without sound can still play.
-    pub fn new(audio: Option<AudioQueue<i16>>) -> Self {
+    /// `speaker` is optional because a machine without sound can still play.
+    pub fn new(speaker: Option<Speaker>) -> Self {
         Self {
             cartridge: None,
             loading: None,
             error: None,
             notice: None,
-            audio,
+            speaker,
             samples: vec![0; 4096],
             bindings: KeyBindings::default(),
             gamepads: None,
@@ -274,11 +274,10 @@ impl Console {
         let mut frames = 0;
         while cartridge.next_frame <= now && frames < MAX_FRAMES_PER_PAINT {
             cartridge.core.run_frame(pressed);
-            let count = cartridge.core.read_audio(&mut self.samples);
-            if let Some(queue) = &self.audio
-                && queue.size() < MAX_QUEUED_AUDIO_BYTES
-            {
-                let _ = queue.queue_audio(&self.samples[..count * 2]);
+            let rate = self.speaker.as_ref().map_or(SILENT_RATE, Speaker::rate);
+            let count = cartridge.core.read_audio(&mut self.samples, rate);
+            if let Some(speaker) = &self.speaker {
+                speaker.push(&self.samples[..count * 2]);
             }
             cartridge.next_frame += FRAME_TIME;
             frames += 1;

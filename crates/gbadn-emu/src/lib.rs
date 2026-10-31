@@ -1,6 +1,7 @@
 //! The GBADN console: mGBA behind a loader that only accepts FASTA cartridges.
 
 pub mod app;
+pub mod audio;
 pub mod controls;
 
 use std::ffi::{CString, c_char, c_int, c_void};
@@ -11,7 +12,6 @@ use thiserror::Error;
 
 pub const WIDTH: usize = 240;
 pub const HEIGHT: usize = 160;
-pub const AUDIO_RATE: i32 = 48000;
 
 const ACCEPTED_SUFFIXES: [&str; 6] = [".fasta", ".fa", ".fna", ".fasta.gz", ".fa.gz", ".fna.gz"];
 
@@ -93,7 +93,12 @@ unsafe extern "C" {
     fn gbadn_core_save_state(core: *mut RawCore, state: *mut c_void) -> bool;
     fn gbadn_core_load_state(core: *mut RawCore, state: *const c_void) -> bool;
     fn gbadn_core_video(core: *const RawCore) -> *const u32;
-    fn gbadn_core_read_audio(core: *mut RawCore, stereo: *mut i16, max_frames: usize) -> usize;
+    fn gbadn_core_read_audio(
+        core: *mut RawCore,
+        stereo: *mut i16,
+        max_frames: usize,
+        rate: c_int,
+    ) -> usize;
 }
 
 /// A running console.
@@ -145,10 +150,18 @@ impl Core {
         unsafe { std::slice::from_raw_parts(gbadn_core_video(self.0.as_ptr()), WIDTH * HEIGHT) }
     }
 
-    /// Drains pending audio into interleaved stereo samples, returning the frame count.
-    pub fn read_audio(&mut self, stereo: &mut [i16]) -> usize {
+    /// Drains pending audio at the given sample rate into interleaved stereo,
+    /// returning the frame count.
+    pub fn read_audio(&mut self, stereo: &mut [i16], rate: u32) -> usize {
         // SAFETY: the shim writes at most stereo.len() / 2 frames.
-        unsafe { gbadn_core_read_audio(self.0.as_ptr(), stereo.as_mut_ptr(), stereo.len() / 2) }
+        unsafe {
+            gbadn_core_read_audio(
+                self.0.as_ptr(),
+                stereo.as_mut_ptr(),
+                stereo.len() / 2,
+                rate as c_int,
+            )
+        }
     }
 }
 

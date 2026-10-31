@@ -34,6 +34,14 @@ fn main() {
 
     println!("cargo:rustc-link-search=native={}", build.display());
     println!("cargo:rustc-link-lib=static=mgba");
-    println!("cargo:rustc-link-lib=m");
-    println!("cargo:rustc-link-lib=pthread");
+    match env::var("CARGO_CFG_TARGET_OS").unwrap().as_str() {
+        "windows" => {
+            println!("cargo:rustc-link-lib=ws2_32");
+            println!("cargo:rustc-link-lib=shlwapi");
+        }
+        _ => {
+            println!("cargo:rustc-link-lib=m");
+            println!("cargo:rustc-link-lib=pthread");
+        }
+    }
 }
