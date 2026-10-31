@@ -10,11 +10,11 @@ pub const WIDTH: usize = 240;
 pub const HEIGHT: usize = 160;
 pub const AUDIO_RATE: i32 = 48000;
 
-const ACCEPTED_EXTENSIONS: [&str; 3] = ["fasta", "fa", "fna"];
+const ACCEPTED_SUFFIXES: [&str; 6] = [".fasta", ".fa", ".fna", ".fasta.gz", ".fa.gz", ".fna.gz"];
 
 #[derive(Debug, Error)]
 pub enum LoadError {
-    #[error("this console only reads FASTA genomic files (.fasta, .fa, .fna)")]
+    #[error("this console only reads FASTA genomic files (.fasta, .fa, .fna, optionally .gz)")]
     NotAFastaFile,
     #[error("could not read {0}: {1}")]
     Io(PathBuf, std::io::Error),
@@ -28,15 +28,25 @@ pub enum LoadError {
 
 /// Reads a cartridge from a FASTA file and returns the ROM bytes, in memory only.
 pub fn read_cartridge(path: &Path) -> Result<Vec<u8>, LoadError> {
-    let accepted = path
-        .extension()
-        .and_then(|e| e.to_str())
-        .is_some_and(|e| ACCEPTED_EXTENSIONS.contains(&e.to_ascii_lowercase().as_str()));
-    if !accepted {
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(str::to_ascii_lowercase)
+        .unwrap_or_default();
+    if !ACCEPTED_SUFFIXES.iter().any(|s| name.ends_with(s)) {
         return Err(LoadError::NotAFastaFile);
     }
     let text = std::fs::read(path).map_err(|e| LoadError::Io(path.to_path_buf(), e))?;
     Ok(gbadn_codec::decode_fasta(&text)?)
+}
+
+/// Where a cartridge keeps its battery save: `game.fasta.gz` and `game.fasta` share `game.sav`.
+pub fn save_path(cartridge: &Path) -> PathBuf {
+    let without_gz = match cartridge.extension().and_then(|e| e.to_str()) {
+        Some(e) if e.eq_ignore_ascii_case("gz") => cartridge.with_extension(""),
+        _ => cartridge.to_path_buf(),
+    };
+    without_gz.with_extension("sav")
 }
 
 /// GBA buttons, as bits of the mask passed to [`Core::run_frame`].

@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::{Duration, Instant};
 
-use gbadn_emu::{AUDIO_RATE, Core, HEIGHT, WIDTH, keys, read_cartridge};
+use gbadn_emu::{AUDIO_RATE, Core, HEIGHT, WIDTH, keys, read_cartridge, save_path};
 use sdl2::audio::{AudioQueue, AudioSpecDesired};
 use sdl2::event::Event;
 use sdl2::keyboard::{Keycode, Scancode};
@@ -44,7 +44,7 @@ fn main() -> ExitCode {
 fn run(path: &Path) -> Result<(), String> {
     let rom = read_cartridge(path).map_err(|e| e.to_string())?;
     let title = gbadn_codec::inspect_rom(&rom).map_or_else(|_| "GBADN".into(), |i| i.title);
-    let mut core = Core::new(&rom, Some(&path.with_extension("sav"))).map_err(|e| e.to_string())?;
+    let mut core = Core::new(&rom, Some(&save_path(path))).map_err(|e| e.to_string())?;
     drop(rom);
 
     let sdl = sdl2::init()?;

@@ -1,14 +1,17 @@
 /target/
 
 # Never commit games. A FASTA encoded from a ROM is still that ROM,
-# so generated sequences are ignored too; only samples/ is allowed.
+# so generated sequences are ignored too; only the original demo is allowed.
 *.gba
 *.agb
 *.sav
 *.fasta
 *.fa
 *.fna
-!samples/*.fasta
+*.fasta.gz
+*.fa.gz
+*.fna.gz
+!samples/demo.fasta
 
 # Personal games for local testing. Never push this folder.
 samples/mGBA/
