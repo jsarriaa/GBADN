@@ -23,7 +23,7 @@ If a step could not be done, leave the item as `[~]` and note what's missing. Ne
 
 - **The console only accepts FASTA.** No code path may load a raw ROM, whatever the extension or a command-line flag says.
 - **Decoded ROMs stay in memory.** The console never writes them to disk.
-- **Never commit games, or FASTA made from games.** Only original programs belong in `samples/`. Test with the demo cartridge (`crates/gbadn-codec/src/demo.rs`).
+- **Never commit games, or FASTA made from games.** `samples/demo.fasta` is the only tracked cartridge; `samples/mGBA/` holds personal games and must never be pushed. Test with the demo cartridge (`crates/gbadn-codec/src/demo.rs`).
 - **Format changes are deliberate.** Anything that alters the sequence needs a version bump and an update to `docs/FORMAT.md`, and `samples/demo.fasta` must be regenerated.
 - **Be honest about size.** FASTA output is usually larger than the ROM; don't describe it as smaller on disk.
 

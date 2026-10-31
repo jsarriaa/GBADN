@@ -6,6 +6,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+flate2 = "1"
 md-5 = "0.10"
 thiserror = "2"
 zstd = "0.13"
