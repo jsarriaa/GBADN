@@ -14,12 +14,12 @@ STRAND_B = "#5AA9E6"
 RUNG = "#A3A9B2"
 
 TOP, BOTTOM = 33.0, 75.0
-STEM_X, AMPLITUDE, TURNS = 50.0, 6.0, 2.0
-LETTER_WIDTH, STRAND_WIDTH, RUNG_WIDTH = 6.5, 2.8, 1.6
+STEM_X, AMPLITUDE, TURNS = 46.0, 5.5, 2.0
+LETTER_WIDTH, STRAND_WIDTH, RUNG_WIDTH = 4.8, 2.4, 1.3
 
-G = "M41 41 C39 36 35 33.5 31 33.5 C25 33.5 21 41 21 54 C21 67 25 74.5 31 74.5 C36 74.5 41 71 41 65 L41 56 L32 56"
-B = "M56 36 H60 C66 36 68.5 40 68.5 44.5 C68.5 49 65.5 53 60 53 H56 M56 53 H61 C67.5 53 70.5 58 70.5 63 C70.5 68 67.5 72 61 72 H56"
-A = "M75 74.5 L83 33.5 L91 74.5 M77.5 62 H88.5"
+G = "M36 41 C34 36 30 33.5 26 33.5 C20 33.5 16 41 16 54 C16 67 20 74.5 26 74.5 C31 74.5 36 71 36 65 L36 56 L27 56"
+B = "M53 35 H59 C65 35 67.5 39 67.5 44 C67.5 49 64.5 53 59 53 H53 M53 53 H60 C66.5 53 69.5 58 69.5 63 C69.5 68 66.5 73 60 73 H53"
+A = "M77 74.5 L85.5 33.5 L94 74.5 M80 62 H91"
 
 
 def strand(phase):
@@ -63,7 +63,8 @@ def svg_paths():
 
 def write_svg(path):
     path.write_text(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 27 82 54" role="img" aria-label="GBADN">\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 26 94 56" role="img" aria-label="GBADN">\n'
+        f'  <rect x="8" y="26" width="94" height="56" rx="8" fill="{GROUND}"/>\n'
         + svg_paths()
         + "\n</svg>\n"
     )
@@ -71,8 +72,8 @@ def write_svg(path):
 
 def write_favicon(path):
     path.write_text(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 -2 88 112">\n'
-        f'  <rect x="10" y="-2" width="88" height="112" rx="14" fill="{GROUND}"/>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 7 94 94">\n'
+        f'  <rect x="8" y="7" width="94" height="94" rx="14" fill="{GROUND}"/>\n'
         + svg_paths()
         + "\n</svg>\n"
     )
@@ -80,8 +81,8 @@ def write_favicon(path):
 
 def write_android_icon(path):
     """Adaptive icons mask to as little as a 66-unit circle, so the word is scaled to fit it."""
-    scale = 0.74
-    middle_x, middle_y = (21 + 91) / 2, 54
+    scale = 0.69
+    middle_x, middle_y = (16 + 94) / 2, 54
     shapes = "\n".join(
         f'        <path android:pathData="{d}" android:strokeColor="{color}" android:strokeWidth="{width}" '
         'android:strokeLineCap="round" android:strokeLineJoin="round"/>'
