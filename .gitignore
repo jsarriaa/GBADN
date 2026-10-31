@@ -1,4 +1,7 @@
 /target/
+/web/dist/
+/web/test/node_modules/
+/web/test/package*.json
 *.apk
 *.jks
 

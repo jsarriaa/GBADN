@@ -1,0 +1,124 @@
+:root {
+  --ground: #16181c;
+  --panel: #23262c;
+  --line: #3a3f47;
+  --text: #e7e9ec;
+  --muted: #a3a9b2;
+  --accent: #5bbe6e;
+  --error: #ff8a80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  padding: env(safe-area-inset-top) max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px, env(safe-area-inset-left));
+  background: var(--ground);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+header { display: flex; align-items: center; gap: 24px; padding-block: 12px; }
+h1 { margin: 0; font-size: 22px; letter-spacing: 0.04em; color: var(--accent); }
+h2 { margin-top: 8px; font-size: 20px; }
+h3 { margin-bottom: 6px; font-size: 16px; }
+small { color: var(--muted); font-weight: normal; }
+main { max-width: 1100px; margin-inline: auto; }
+
+nav { display: flex; gap: 4px; }
+nav button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #0d1a10; }
+
+button, .button {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+button:hover, .button:hover { border-color: var(--muted); }
+button:focus-visible, .button:focus-within, .drop:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+#game-title { font-weight: 600; }
+#console-status, #converter-status { color: var(--muted); }
+.is-error { color: var(--error) !important; }
+
+#stage { display: flex; align-items: stretch; justify-content: center; gap: 12px; }
+#screen-area {
+  position: relative;
+  flex: 0 1 min(100%, 720px);
+  aspect-ratio: 3 / 2;
+  min-width: 0;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+}
+#screen-area.is-dropping { outline: 2px solid var(--accent); }
+canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+#drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 16px;
+  background: var(--panel);
+  color: var(--muted);
+  text-align: center;
+}
+#drop-hint strong { color: var(--text); }
+#drop-hint p { margin: 4px 0; }
+
+.keys { color: var(--muted); font-size: 13px; text-align: center; }
+kbd { padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: inherit; font-size: 12px; }
+
+.pad { display: none; flex: 0 0 auto; width: 150px; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; }
+.pad button { touch-action: none; user-select: none; -webkit-user-select: none; padding: 0; background: rgb(255 255 255 / 10%); }
+.pad button.is-held { background: rgb(255 255 255 / 40%); }
+.pill { width: 100%; height: 40px; border-radius: 20px; }
+.dpad { display: grid; grid-template: repeat(3, 44px) / repeat(3, 44px); }
+.dpad [data-button="UP"] { grid-area: 1 / 2; }
+.dpad [data-button="LEFT"] { grid-area: 2 / 1; }
+.dpad [data-button="RIGHT"] { grid-area: 2 / 3; }
+.dpad [data-button="DOWN"] { grid-area: 3 / 2; }
+.face { position: relative; width: 130px; height: 120px; }
+.face button { position: absolute; width: 60px; height: 60px; border-radius: 50%; font-size: 18px; }
+.face [data-button="A"] { top: 0; right: 0; }
+.face [data-button="B"] { bottom: 0; left: 0; }
+
+body.has-touch .pad { display: flex; }
+body.has-touch [data-keyboard-only] { display: none; }
+
+@media (max-width: 760px) and (orientation: portrait) {
+  body.has-touch #stage { flex-wrap: wrap; }
+  body.has-touch #screen-area { flex: 1 1 100%; order: -1; }
+  body.has-touch .pad { width: calc(50% - 6px); }
+}
+
+.drop {
+  display: block;
+  padding: 40px 16px;
+  border: 2px dashed var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+}
+.drop strong { color: var(--text); }
+.drop.is-dropping { border-color: var(--accent); }
+
+table { border-collapse: collapse; }
+td { padding: 3px 16px 3px 0; overflow-wrap: anywhere; }
+td:first-child { color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+footer { max-width: 1100px; margin: 32px auto 0; padding-block: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+footer p { margin: 4px 0; }
+a { color: var(--accent); }

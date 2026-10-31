@@ -1,0 +1,64 @@
+name: Website
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - .github/workflows/web.yml
+      - web/**
+      - crates/gbadn-web/**
+      - crates/gbadn-codec/**
+      - crates/gbadn-emu/shim/**
+      - samples/**
+      - Cargo.lock
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@1.94.1
+        with:
+          targets: wasm32-unknown-emscripten
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.10
+      - run: web/build.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test in a real browser
+        run: |
+          cargo run --release --locked -p gbadn-codec --example make_demo -- "$RUNNER_TEMP/gbadn-demo.gba"
+          cd web/test
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+          node site.mjs ../dist "$RUNNER_TEMP/gbadn-demo.gba" "$RUNNER_TEMP/screenshots"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots
+          path: ${{ runner.temp }}/screenshots
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    # GitHub Pages is only free on public repositories.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && !github.event.repository.private
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,13 @@
+[package]
+name = "gbadn-web"
+description = "The GBADN codec behind a C interface, for the browser version"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+gbadn-codec = { path = "../gbadn-codec" }

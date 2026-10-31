@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>GBADN</title>
+<meta name="description" content="A Game Boy Advance console whose cartridges are DNA. Your files stay on your device.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>GBADN</h1>
+  <nav role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-console" aria-selected="true" aria-controls="console">Console</button>
+    <button role="tab" id="tab-converter" aria-selected="false" aria-controls="converter">Converter</button>
+  </nav>
+</header>
+
+<main>
+  <section id="console" role="tabpanel" aria-labelledby="tab-console">
+    <div class="toolbar">
+      <label class="button">Open cartridge<input id="cartridge-input" type="file" hidden></label>
+      <button id="play-demo">Play the demo</button>
+      <button id="close-game" hidden>Close</button>
+      <button id="save-state" hidden>Save state</button>
+      <button id="load-state" hidden>Load state</button>
+      <span id="game-title"></span>
+      <span id="console-status" role="status"></span>
+    </div>
+
+    <div id="stage">
+      <div class="pad left" data-touch-only>
+        <button class="pill" data-button="L">L</button>
+        <div class="dpad">
+          <button data-button="UP" aria-label="Up">▲</button>
+          <button data-button="LEFT" aria-label="Left">◀</button>
+          <button data-button="RIGHT" aria-label="Right">▶</button>
+          <button data-button="DOWN" aria-label="Down">▼</button>
+        </div>
+        <button class="pill" data-button="SELECT">Select</button>
+      </div>
+
+      <div id="screen-area">
+        <canvas id="screen" width="240" height="160" aria-label="Game screen"></canvas>
+        <div id="drop-hint">
+          <p><strong>Drop a <code>.fasta.gz</code> cartridge here</strong>, or open one above.</p>
+          <p>This console only reads FASTA genomic files. Make one in the Converter.</p>
+        </div>
+      </div>
+
+      <div class="pad right" data-touch-only>
+        <button class="pill" data-button="R">R</button>
+        <div class="face">
+          <button data-button="A">A</button>
+          <button data-button="B">B</button>
+        </div>
+        <button class="pill" data-button="START">Start</button>
+      </div>
+    </div>
+
+    <p class="keys" data-keyboard-only>
+      <kbd>Arrows</kbd> D-pad · <kbd>Z</kbd> A · <kbd>X</kbd> B · <kbd>A</kbd> L · <kbd>S</kbd> R ·
+      <kbd>Enter</kbd> Start · <kbd>Backspace</kbd> Select · <kbd>F2</kbd> save state · <kbd>F4</kbd> load state
+    </p>
+  </section>
+
+  <section id="converter" role="tabpanel" aria-labelledby="tab-converter" hidden>
+    <h2>Turn a GBA ROM into DNA</h2>
+    <label id="rom-drop" class="drop">
+      <strong>Drop a <code>.gba</code> file here</strong>, or click to choose one
+      <input id="rom-input" type="file" accept=".gba,.agb,.bin" hidden>
+    </label>
+    <p id="converter-status" role="status"></p>
+    <div id="report" hidden>
+      <h3 id="report-title"></h3>
+      <table>
+        <tbody id="report-rows"></tbody>
+      </table>
+      <h3>Chromosomes <small>(best guess from the content)</small></h3>
+      <table>
+        <tbody id="report-chromosomes"></tbody>
+      </table>
+      <p class="actions">
+        <button id="download">Download cartridge</button>
+        <button id="play-converted">Play it</button>
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>
+    Everything runs on your device: nothing you open is uploaded, and no games are included.
+    Only use ROMs you have the right to use.
+  </p>
+  <p>
+    <a href="https://github.com/jsarriaa/GBADN">Source code</a> ·
+    <a href="LICENSE.txt">MIT License</a> ·
+    Emulation by <a href="https://mgba.io">mGBA</a> (<a href="https://github.com/mgba-emu/mgba">source</a>, <a href="LICENSE.mGBA.txt">MPL-2.0</a>)
+  </p>
+</footer>
+
+<script src="gbadn.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
