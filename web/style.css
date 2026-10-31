@@ -11,6 +11,9 @@
 
 * { box-sizing: border-box; }
 
+/* Display rules below would otherwise win over the hidden attribute. */
+[hidden] { display: none !important; }
+
 html, body { min-height: 100%; }
 
 body {
@@ -95,7 +98,23 @@ kbd { padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; backg
 body.has-touch .pad { display: flex; }
 body.has-touch [data-keyboard-only] { display: none; }
 
-@media (max-width: 760px) and (orientation: portrait) {
+/* While playing on a phone, the game gets all the room the toolbar leaves. */
+body.has-touch.is-playing header,
+body.has-touch.is-playing footer { display: none; }
+body.has-touch.is-playing { padding-block: 8px; }
+body.has-touch.is-playing .toolbar { margin-bottom: 8px; }
+
+@media (orientation: landscape) {
+  body.has-touch #stage { height: calc(100dvh - 70px); min-height: 220px; }
+  body.has-touch #screen-area { flex: 0 1 auto; height: 100%; }
+  body.has-touch .pad { width: auto; flex: 1 1 110px; max-width: 170px; }
+  body.has-touch .dpad { grid-template: repeat(3, 38px) / repeat(3, 38px); }
+  body.has-touch .pill { height: 34px; }
+  body.has-touch .face { width: 120px; height: 104px; }
+  body.has-touch .face button { width: 52px; height: 52px; }
+}
+
+@media (orientation: portrait) {
   body.has-touch #stage { flex-wrap: wrap; }
   body.has-touch #screen-area { flex: 1 1 100%; order: -1; }
   body.has-touch .pad { width: calc(50% - 6px); }

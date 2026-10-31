@@ -154,6 +154,7 @@ async function startGame(rom, title) {
 
   $("game-title").textContent = title;
   $("drop-hint").hidden = true;
+  document.body.classList.add("is-playing");
   for (const id of ["close-game", "save-state", "load-state"]) $(id).hidden = false;
   requestAnimationFrame(tick);
 }
@@ -167,6 +168,7 @@ function closeGame() {
   context.clearRect(0, 0, WIDTH, HEIGHT);
   $("game-title").textContent = "";
   $("drop-hint").hidden = false;
+  document.body.classList.remove("is-playing");
   for (const id of ["close-game", "save-state", "load-state"]) $(id).hidden = true;
 }
 

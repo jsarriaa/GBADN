@@ -71,10 +71,33 @@ const statusSays = (page, id, text) => async () => (await page.textContent(id)).
 
 const page = await openPage({ viewport: { width: 1200, height: 800 } });
 
-await test("the demo plays and reacts to the keyboard", async () => {
+// What a person sees, which the canvas's own pixels can't tell.
+const expectGameOnScreen = async (target) => {
+  const { x, y, width, height } = await target.locator("#screen").boundingBox();
+  const middle = await target.evaluate(
+    ([px, py]) => document.elementFromPoint(px, py)?.id,
+    [x + width / 2, y + height / 2],
+  );
+  if (middle !== "screen") throw new Error(`${middle} covers the game`);
+  const viewport = target.viewportSize();
+  if (x < 0 || y < 0 || x + width > viewport.width + 1 || y + height > viewport.height + 1) {
+    throw new Error(`the game runs off the page: ${JSON.stringify({ x, y, width, height })}`);
+  }
+};
+
+await test("the start screen only offers what makes sense", async () => {
+  for (const id of ["#close-game", "#save-state", "#load-state"]) {
+    if (await page.isVisible(id)) throw new Error(`${id} is showing with no game`);
+  }
+  if (!(await page.isVisible("#drop-hint"))) throw new Error("the prompt is missing");
   await page.screenshot({ path: join(shots, "start.png") });
+});
+
+await test("the demo plays and reacts to the keyboard", async () => {
   await page.click("#play-demo");
   await waitFor(() => isGreen(page), "a green screen");
+  await expectGameOnScreen(page);
+  if (await page.isVisible("#drop-hint")) throw new Error("the prompt is still showing");
   await page.screenshot({ path: join(shots, "playing.png") });
   await page.keyboard.down("KeyZ");
   await waitFor(() => isRed(page), "a red screen");
@@ -132,7 +155,15 @@ await test("touch buttons work on a phone-sized screen", async () => {
   const phone = await openPage({ viewport: { width: 844, height: 390 }, hasTouch: true, isMobile: true });
   await phone.click("#play-demo");
   await waitFor(() => isGreen(phone), "a green screen");
+  await expectGameOnScreen(phone);
   await phone.screenshot({ path: join(shots, "phone.png") });
+  for (const button of ["UP", "DOWN", "LEFT", "RIGHT", "A", "B", "L", "R", "START", "SELECT"]) {
+    const { x, y, width, height } = await phone.locator(`[data-button="${button}"]`).boundingBox();
+    const viewport = phone.viewportSize();
+    if (x < 0 || y < 0 || x + width > viewport.width + 1 || y + height > viewport.height + 1) {
+      throw new Error(`${button} is off the screen`);
+    }
+  }
   const box = await phone.locator('[data-button="A"]').boundingBox();
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -141,6 +172,14 @@ await test("touch buttons work on a phone-sized screen", async () => {
   await waitFor(() => isRed(phone), "a red screen");
   await phone.mouse.up();
   await waitFor(() => isGreen(phone), "green again");
+});
+
+await test("a phone held upright fits too", async () => {
+  const phone = await openPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  await phone.click("#play-demo");
+  await waitFor(() => isGreen(phone), "a green screen");
+  await expectGameOnScreen(phone);
+  await phone.screenshot({ path: join(shots, "phone-upright.png") });
 });
 
 await browser.close();
