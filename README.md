@@ -12,10 +12,14 @@ Early development: see [ROADMAP.md](ROADMAP.md) for what works today.
 ## How it works
 
 ```
-game.gba -> zstd -> 2 bits per base -> gzip -> game.fasta.gz -> Console decodes in memory -> mGBA
+game.gba -> chromosomes -> zstd -> 2 bits per base -> gzip -> game.fasta.gz -> Console decodes in memory -> mGBA
 ```
 
-The output is a real single-record FASTA file with only `A`, `C`, `G` and `T`, and every cartridge carries an MD5 checksum, so a single mutated base is detected. The full specification is in [docs/FORMAT.md](docs/FORMAT.md).
+The output is a real multi-record FASTA file with only `A`, `C`, `G` and `T`, and every cartridge carries an MD5 checksum, so a single mutated base is detected. The full specification is in [docs/FORMAT.md](docs/FORMAT.md).
+
+### Chromosomes
+
+Each cartridge is split into `chrHeader`, `chrCode`, `chrGraphics`, `chrAudio`, `chrData` and `chrEmpty`, plus a `gbadn_layout` record that rebuilds the exact ROM. A GBA ROM has no table of contents, so apart from the header and empty space these labels are best guesses from the content; a wrong guess never affects the game. Pokemon Emerald, for example, splits into roughly 10% code, 10% compressed graphics, 26% sampled audio, 37% other data and 18% empty space.
 
 ### About "compress"
 
