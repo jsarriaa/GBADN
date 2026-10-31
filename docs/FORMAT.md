@@ -2,6 +2,8 @@
 
 A GBADN cartridge is a FASTA file with exactly one record. Its sequence encodes a binary container that holds a GBA ROM.
 
+Cartridges are normally gzip-compressed (`.fasta.gz`). Decoders detect gzip from the file's contents and accept multi-member files, as written by `bgzip`.
+
 ## FASTA layout
 
 ```
@@ -48,6 +50,7 @@ Encoders use zstd only when it makes the payload smaller than the ROM.
 
 A decoder must reject a file when any of these is true:
 
+- It holds damaged gzip data, or expands past the limit for its size.
 - It doesn't start with `>`, has a second record, or doesn't begin with the magic. Any other FASTA, such as a real genome, is not a cartridge.
 - The sequence contains anything other than `A`, `C`, `G`, `T`, or isn't a whole number of bytes.
 - The version or compression method is unknown.
@@ -58,4 +61,4 @@ MD5 detects accidental corruption and mutations. It doesn't protect against deli
 
 ## Size
 
-A FASTA file takes about `(32 + payload) x 4 x 71/70` bytes plus its header line. The physical mass reported by Studio assumes 5.48e-22 g per base of single-stranded DNA.
+Plain FASTA takes about `(32 + payload) x 4 x 71/70` bytes plus its header line. Gzip brings that back close to the payload size, because each base carries only 2 bits. The physical mass reported by Studio assumes 5.48e-22 g per base of single-stranded DNA.

@@ -1269,6 +1269,7 @@ dependencies = [
 name = "gbadn-codec"
 version = "0.1.0"
 dependencies = [
+ "flate2",
  "md-5",
  "thiserror 2.0.21",
  "zstd",

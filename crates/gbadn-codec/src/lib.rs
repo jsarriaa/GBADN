@@ -3,6 +3,11 @@
 
 pub mod demo;
 
+use std::io::{Read, Write};
+
+use flate2::Compression;
+use flate2::read::MultiGzDecoder;
+use flate2::write::GzEncoder;
 use md5::{Digest, Md5};
 use thiserror::Error;
 
@@ -14,6 +19,11 @@ const VERSION: u8 = 1;
 const CONTAINER_HEADER_SIZE: usize = 32;
 const LINE_WIDTH: usize = 70;
 const BASES: [u8; 4] = *b"ACGT";
+const GZIP_MAGIC: [u8; 2] = [0x1F, 0x8B];
+/// Upper bound on the bases of any cartridge; also bounds real genomes.
+const MAX_BASES: usize = (CONTAINER_HEADER_SIZE + MAX_ROM_SIZE) * 4;
+/// Upper bound on FASTA text, allowing for short lines, so a small gzip can't fill memory.
+const MAX_FASTA_SIZE: usize = MAX_BASES * 2 + 4096;
 /// Average mass of one single-stranded DNA nucleotide (about 330 Da).
 const GRAMS_PER_BASE: f64 = 5.48e-22;
 
@@ -36,6 +46,8 @@ pub enum Error {
     Corrupted(&'static str),
     #[error("sequence checksum mismatch: the DNA has mutated")]
     ChecksumMismatch,
+    #[error("the gzip compression of this file is damaged")]
+    DamagedGzip,
     #[error("compression failed: {0}")]
     Compression(String),
 }
@@ -79,6 +91,8 @@ fn header_text(bytes: &[u8]) -> String {
 #[derive(Debug, Clone)]
 pub struct Encoded {
     pub fasta: String,
+    /// The same FASTA, gzip-compressed: the form cartridges normally travel in.
+    pub fasta_gz: Vec<u8>,
     pub info: RomInfo,
     pub rom_size: usize,
     pub payload_size: usize,
@@ -150,12 +164,14 @@ pub fn encode(rom: &[u8]) -> Result<Encoded, Error> {
         fasta.push('\n');
     }
 
-    if decode_fasta(fasta.as_bytes())? != rom {
+    let fasta_gz = gzip(fasta.as_bytes())?;
+    if decode_fasta(&fasta_gz)? != rom {
         return Err(Error::Corrupted("round trip verification failed"));
     }
 
     Ok(Encoded {
         fasta,
+        fasta_gz,
         info,
         rom_size: rom.len(),
         payload_size: payload.len(),
@@ -165,8 +181,37 @@ pub fn encode(rom: &[u8]) -> Result<Encoded, Error> {
     })
 }
 
-/// Decodes GBADN FASTA text back into the ROM bytes, in memory.
-pub fn decode_fasta(text: &[u8]) -> Result<Vec<u8>, Error> {
+fn gzip(text: &[u8]) -> Result<Vec<u8>, Error> {
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::best());
+    encoder
+        .write_all(text)
+        .and_then(|()| encoder.finish())
+        .map_err(|e| Error::Compression(e.to_string()))
+}
+
+/// Unpacks gzip data, including the multi-member files `bgzip` writes.
+fn gunzip(data: &[u8]) -> Result<Vec<u8>, Error> {
+    let mut text = Vec::new();
+    MultiGzDecoder::new(data)
+        .take(MAX_FASTA_SIZE as u64 + 1)
+        .read_to_end(&mut text)
+        .map_err(|_| Error::DamagedGzip)?;
+    if text.len() > MAX_FASTA_SIZE {
+        return Err(Error::NotGbadn);
+    }
+    Ok(text)
+}
+
+/// Decodes a GBADN cartridge back into the ROM bytes, in memory.
+/// Accepts FASTA text, or the same text gzip-compressed.
+pub fn decode_fasta(data: &[u8]) -> Result<Vec<u8>, Error> {
+    if data.starts_with(&GZIP_MAGIC) {
+        return decode_text(&gunzip(data)?);
+    }
+    decode_text(data)
+}
+
+fn decode_text(text: &[u8]) -> Result<Vec<u8>, Error> {
     let container = read_sequence(text)?;
     if container.len() < CONTAINER_HEADER_SIZE || &container[..4] != MAGIC {
         return Err(Error::NotGbadn);
@@ -210,9 +255,6 @@ fn read_sequence(text: &[u8]) -> Result<Vec<u8>, Error> {
     if text.first() != Some(&b'>') {
         return Err(Error::NotFasta);
     }
-    // A raw payload never exceeds the ROM limit, so this also bounds real genomes.
-    let max_bases = (CONTAINER_HEADER_SIZE + MAX_ROM_SIZE) * 4;
-
     let mut bytes = Vec::with_capacity(text.len() / 4);
     let (mut current, mut count) = (0u8, 0usize);
     for (index, line) in text.split(|&b| b == b'\n').enumerate() {
@@ -235,7 +277,7 @@ fn read_sequence(text: &[u8]) -> Result<Vec<u8>, Error> {
             };
             current = (current << 2) | code;
             count += 1;
-            if count > max_bases {
+            if count > MAX_BASES {
                 return Err(Error::NotGbadn);
             }
             if count % 4 == 0 {
@@ -388,6 +430,51 @@ mod tests {
     fn rejects_files_that_are_not_roms() {
         assert!(matches!(encode(b"hello"), Err(Error::NotARom(_))));
         assert!(matches!(encode(&vec![0; 1024]), Err(Error::NotARom(_))));
+    }
+
+    #[test]
+    fn decodes_gzip_cartridges() {
+        let rom = fake_rom(64 * 1024, false);
+        let encoded = encode(&rom).unwrap();
+        assert_eq!(&encoded.fasta_gz[..2], &GZIP_MAGIC);
+        assert!(encoded.fasta_gz.len() < encoded.fasta.len());
+        assert_eq!(decode_fasta(&encoded.fasta_gz).unwrap(), rom);
+    }
+
+    #[test]
+    fn decodes_multi_member_gzip_as_bgzip_writes_it() {
+        let rom = fake_rom(4096, true);
+        let text = encode(&rom).unwrap().fasta.into_bytes();
+        let (first, second) = text.split_at(text.len() / 2);
+        let mut members = gzip(first).unwrap();
+        members.extend(gzip(second).unwrap());
+        assert_eq!(decode_fasta(&members).unwrap(), rom);
+    }
+
+    #[test]
+    fn rejects_damaged_gzip() {
+        let mut data = encode(&fake_rom(4096, true)).unwrap().fasta_gz;
+        data.truncate(data.len() / 2);
+        assert_eq!(decode_fasta(&data), Err(Error::DamagedGzip));
+    }
+
+    #[test]
+    fn rejects_gzip_that_expands_without_limit() {
+        // Far past the limit, while staying cheap to compress.
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::fast());
+        let chunk = vec![b'A'; 1024 * 1024];
+        encoder.write_all(b">big\n").unwrap();
+        for _ in 0..(MAX_FASTA_SIZE / chunk.len() + 2) {
+            encoder.write_all(&chunk).unwrap();
+        }
+        let bomb = encoder.finish().unwrap();
+        assert_eq!(decode_fasta(&bomb), Err(Error::NotGbadn));
+    }
+
+    #[test]
+    fn rejects_gzip_of_something_else() {
+        let rom = fake_rom(1024, true);
+        assert_eq!(decode_fasta(&gzip(&rom).unwrap()), Err(Error::NotFasta));
     }
 
     #[test]

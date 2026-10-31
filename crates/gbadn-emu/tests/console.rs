@@ -1,7 +1,9 @@
 //! Boots a FASTA cartridge on the real core, with no window.
 
 use gbadn_codec::{decode_fasta, demo, encode};
-use gbadn_emu::{Core, LoadError, WIDTH, keys, read_cartridge};
+use std::path::{Path, PathBuf};
+
+use gbadn_emu::{Core, LoadError, WIDTH, keys, read_cartridge, save_path};
 
 fn boot_demo() -> Core {
     let fasta = encode(&demo::rom()).unwrap().fasta;
@@ -48,6 +50,32 @@ fn produces_audio_samples() {
         total += core.read_audio(&mut samples);
     }
     assert!(total > 0);
+}
+
+#[test]
+fn gzip_cartridges_load_from_disk() {
+    let dir = std::env::temp_dir().join(format!("gbadn-gz-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("demo.fasta.gz");
+    std::fs::write(&path, encode(&demo::rom()).unwrap().fasta_gz).unwrap();
+    assert_eq!(read_cartridge(&path).unwrap(), demo::rom());
+
+    // A gzip of a raw ROM is still not DNA, and neither is another extension.
+    let renamed = dir.join("demo.gz");
+    std::fs::write(&renamed, encode(&demo::rom()).unwrap().fasta_gz).unwrap();
+    assert!(matches!(
+        read_cartridge(&renamed),
+        Err(LoadError::NotAFastaFile)
+    ));
+    std::fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn compressed_and_plain_cartridges_share_a_save() {
+    let expected = PathBuf::from("/saves/game.sav");
+    assert_eq!(save_path(Path::new("/saves/game.fasta")), expected);
+    assert_eq!(save_path(Path::new("/saves/game.fasta.gz")), expected);
+    assert_eq!(save_path(Path::new("/saves/game.FA.GZ")), expected);
 }
 
 #[test]
