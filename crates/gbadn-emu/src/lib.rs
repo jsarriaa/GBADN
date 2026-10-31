@@ -1,6 +1,7 @@
 //! The GBADN console: mGBA behind a loader that only accepts FASTA cartridges.
 
 pub mod app;
+pub mod controls;
 
 use std::ffi::{CString, c_char, c_int, c_void};
 use std::path::{Path, PathBuf};

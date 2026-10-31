@@ -52,7 +52,8 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 - [ ] "Play" button in Studio
 - [ ] Command-line tool
-- [ ] Gamepad support and remappable keys
+- [x] Remappable keys, remembered between sessions
+- [~] Gamepad support: button mapping tested; not yet tried with a physical gamepad
 - [x] Save states
 
 ## M5: Releases

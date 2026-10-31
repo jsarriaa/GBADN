@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 use eframe::egui::{self, Color32, Key, RichText, TextureOptions};
 use sdl2::audio::AudioQueue;
 
-use crate::{Core, HEIGHT, LoadError, WIDTH, keys, read_cartridge, save_path, state_path};
+use crate::controls::{BUTTONS, Gamepads, KeyBindings, RESERVED_KEYS};
+use crate::{Core, HEIGHT, LoadError, WIDTH, read_cartridge, save_path, state_path};
 
 /// The GBA refreshes at 16.777 MHz / 280896 cycles.
 const FRAME_TIME: Duration = Duration::from_nanos(16_742_706);
@@ -18,18 +19,7 @@ const MAX_FRAMES_PER_PAINT: u32 = 3;
 const MAX_QUEUED_AUDIO_BYTES: u32 = 48000 / 5 * 4;
 const SCREEN_ASPECT: f32 = WIDTH as f32 / HEIGHT as f32;
 
-const KEYMAP: [(Key, u32); 10] = [
-    (Key::Z, keys::A),
-    (Key::X, keys::B),
-    (Key::A, keys::L),
-    (Key::S, keys::R),
-    (Key::Enter, keys::START),
-    (Key::Backspace, keys::SELECT),
-    (Key::ArrowUp, keys::UP),
-    (Key::ArrowDown, keys::DOWN),
-    (Key::ArrowLeft, keys::LEFT),
-    (Key::ArrowRight, keys::RIGHT),
-];
+const BINDINGS_SETTING: &str = "key_bindings";
 
 struct Cartridge {
     core: Core,
@@ -50,6 +40,12 @@ pub struct Console {
     notice: Option<String>,
     audio: Option<AudioQueue<i16>>,
     samples: Vec<i16>,
+    bindings: KeyBindings,
+    gamepads: Option<Gamepads>,
+    /// The Controls screen is open, which pauses the game.
+    showing_controls: bool,
+    /// The GBA button waiting for a new key.
+    rebinding: Option<u32>,
 }
 
 impl Console {
@@ -62,7 +58,23 @@ impl Console {
             notice: None,
             audio,
             samples: vec![0; 4096],
+            bindings: KeyBindings::default(),
+            gamepads: None,
+            showing_controls: false,
+            rebinding: None,
         }
+    }
+
+    /// Restores the player's keys from saved settings text.
+    pub fn with_saved_bindings(mut self, text: &str) -> Self {
+        self.bindings = KeyBindings::from_text(text);
+        self
+    }
+
+    /// Reads connected gamepads, on machines that can.
+    pub fn with_gamepads(mut self, gamepads: Option<Gamepads>) -> Self {
+        self.gamepads = gamepads;
+        self
     }
 
     /// Starts decoding a file. A game in progress keeps running until this succeeds.
@@ -97,6 +109,7 @@ impl Console {
         }
 
         let (mut wants_open, mut wants_close) = (false, false);
+        let mut wants_controls = false;
         let mut wants_save_state = ctx.input(|i| i.key_pressed(Key::F5));
         let mut wants_load_state = ctx.input(|i| i.key_pressed(Key::F9));
         egui::Panel::top("toolbar").show(ui, |ui| {
@@ -105,6 +118,7 @@ impl Console {
                 wants_open = ui
                     .add_enabled(idle, egui::Button::new("Open cartridge"))
                     .clicked();
+                wants_controls = ui.button("Controls").clicked();
                 if let Some(cartridge) = &self.cartridge {
                     wants_close = ui.button("Close").clicked();
                     wants_save_state |= ui.button("Save state").clicked();
@@ -143,13 +157,21 @@ impl Console {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title("GBADN Console".into()));
         }
 
-        if self.cartridge.is_some() {
+        if wants_controls {
+            self.showing_controls = !self.showing_controls;
+            self.rebinding = None;
+        }
+
+        if self.showing_controls {
+            self.capture_rebinding(&ctx);
+            egui::CentralPanel::default().show(ui, |ui| self.controls_screen(ui));
+        } else if self.cartridge.is_some() {
             self.run_game(&ctx);
             egui::CentralPanel::default()
                 .frame(egui::Frame::new().fill(Color32::BLACK))
                 .show(ui, |ui| self.draw_screen(ui));
         } else {
-            egui::CentralPanel::default().show(ui, start_screen);
+            egui::CentralPanel::default().show(ui, |ui| self.start_screen(ui));
         }
     }
 
@@ -244,12 +266,9 @@ impl Console {
                 memory.surrender_focus(focused);
             }
         });
-        let pressed = ctx.input(|input| {
-            KEYMAP
-                .iter()
-                .filter(|(key, _)| input.key_down(*key))
-                .fold(0, |mask, (_, button)| mask | button)
-        });
+        let keyboard = ctx.input(|input| self.bindings.pressed(|key| input.key_down(key)));
+        let gamepad = self.gamepads.as_mut().map_or(0, Gamepads::pressed);
+        let pressed = keyboard | gamepad;
 
         let now = Instant::now();
         let mut frames = 0;
@@ -286,6 +305,86 @@ impl Console {
         ctx.request_repaint();
     }
 
+    /// Takes the next key press for the button waiting for one.
+    fn capture_rebinding(&mut self, ctx: &egui::Context) {
+        let Some(button) = self.rebinding else {
+            return;
+        };
+        let pressed = ctx.input(|input| {
+            input.events.iter().find_map(|event| match event {
+                egui::Event::Key {
+                    key,
+                    pressed: true,
+                    repeat: false,
+                    ..
+                } => Some(*key),
+                _ => None,
+            })
+        });
+        match pressed {
+            Some(Key::Escape) => self.rebinding = None,
+            Some(key) if !RESERVED_KEYS.contains(&key) => {
+                self.bindings.assign(button, key);
+                self.rebinding = None;
+            }
+            _ => {}
+        }
+    }
+
+    fn controls_screen(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Controls");
+        ui.label("Click a key to change it, then press the new one. Esc cancels.");
+        ui.add_space(8.0);
+        egui::Grid::new("controls").num_columns(2).show(ui, |ui| {
+            for (button, name, _) in BUTTONS {
+                ui.label(name);
+                let text = if self.rebinding == Some(button) {
+                    "Press a key".to_string()
+                } else {
+                    self.bindings.key(button).name().to_string()
+                };
+                if ui.button(text).clicked() {
+                    self.rebinding = Some(button);
+                }
+                ui.end_row();
+            }
+        });
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            if ui.button("Reset to defaults").clicked() {
+                self.bindings = KeyBindings::default();
+                self.rebinding = None;
+            }
+            if ui.button("Done").clicked() {
+                self.showing_controls = false;
+                self.rebinding = None;
+            }
+        });
+        ui.add_space(12.0);
+        let gamepad = self.gamepads.as_mut().and_then(Gamepads::name);
+        ui.label(match gamepad {
+            Some(name) => format!("Gamepad: {name}"),
+            None => "No gamepad connected".to_string(),
+        });
+        ui.label("Gamepads use their D-pad or left stick, shoulder buttons, Start and Select.");
+        ui.label("A and B are the right and bottom face buttons, as on a GBA.");
+    }
+
+    fn start_screen(&self, ui: &mut egui::Ui) {
+        ui.vertical_centered(|ui| {
+            ui.add_space(48.0);
+            ui.heading("GBADN Console");
+            ui.add_space(8.0);
+            ui.label("Drop a .fasta.gz cartridge here, or open one above.");
+            ui.add_space(24.0);
+            ui.label(RichText::new("Keys").strong());
+            for (button, name, _) in BUTTONS {
+                ui.label(format!("{name}: {}", self.bindings.key(button).name()));
+            }
+            ui.label("Save state: F5    Load state: F9");
+        });
+    }
+
     fn draw_screen(&self, ui: &mut egui::Ui) {
         let Some(cartridge) = &self.cartridge else {
             return;
@@ -308,18 +407,15 @@ impl eframe::App for Console {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.show(ui);
     }
+
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        storage.set_string(BINDINGS_SETTING, self.bindings.to_text());
+    }
 }
 
-fn start_screen(ui: &mut egui::Ui) {
-    ui.vertical_centered(|ui| {
-        ui.add_space(48.0);
-        ui.heading("GBADN Console");
-        ui.add_space(8.0);
-        ui.label("Drop a .fasta.gz cartridge here, or open one above.");
-        ui.add_space(24.0);
-        ui.label(RichText::new("Controls").strong());
-        ui.label("D-pad: arrows    A / B: Z / X    L / R: A / S");
-        ui.label("Start: Enter    Select: Backspace");
-        ui.label("Save state: F5    Load state: F9");
-    });
+/// Reads the player's saved keys from the settings store.
+pub fn saved_bindings(storage: Option<&dyn eframe::Storage>) -> String {
+    storage
+        .and_then(|s| s.get_string(BINDINGS_SETTING))
+        .unwrap_or_default()
 }
