@@ -7,7 +7,7 @@ GBADN has two programs:
 - **GBADN Console** (`gbadn-emu`) is a GBA emulator that only reads FASTA genomic files, plain or gzip-compressed. It refuses `.gba` files, and a ROM renamed to `.fasta` as well.
 - **GBADN Studio** (`gbadn-studio`) is a desktop app: drop a GBA ROM in and get a `.fasta.gz` file out.
 
-Early development: see [ROADMAP.md](ROADMAP.md) for what works today.
+Current release: v0.1.0, for Linux, Windows and macOS. See [ROADMAP.md](ROADMAP.md) for what's verified and what's next.
 
 ## How it works
 
@@ -27,7 +27,9 @@ Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is
 
 ## Download
 
-Linux, Windows and macOS (Apple Silicon) builds are on the [Releases](../../releases) page. Unpack the archive and keep both programs in the same folder.
+Linux, Windows and macOS (Apple Silicon) builds are on the [Releases](../../releases) page. The repository is private, so downloading needs access to it. Intel Macs and Android aren't covered yet.
+
+Unpack the archive and keep both programs in the same folder. On Linux, you need ALSA and udev, which most desktop systems already have.
 
 The builds aren't signed, so systems warn the first time:
 

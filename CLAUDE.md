@@ -8,6 +8,15 @@ GBADN is a GBA emulator that only reads FASTA genomic files, plus a desktop UI t
 - Merge only after CI passes and the project owner has reviewed the PR.
 - Commit, push and open PRs as part of this flow, on a task branch. Leave merging to the project owner.
 - Use imperative commit subjects that say what changes, such as `Add gamepad support`.
+- Merge stacked PRs in order with merge commits, retargeting each to `main` before merging it. `gh pr edit --base` can fail on a GitHub API error, leaving a PR on its old base, so use `gh api -X PATCH repos/jsarriaa/GBADN/pulls/<number> -f base=main` and confirm the base changed.
+
+## Releases
+
+- Pushing a `v*` tag from `main` builds Linux, Windows and macOS, runs all tests on each, and publishes a GitHub release. Tag only when the project owner asks.
+- Keep the version in `Cargo.toml` matching the tag, and update `ROADMAP.md` and the README's current release in the PR before tagging.
+- The repository is private, so releases need repository access. Don't change its visibility, or add a license, without the project owner's decision.
+- Pull requests only run the release builds when they touch the workflow, `build.rs`, the shim or `Cargo.lock`, because Windows and macOS minutes cost more on a private repository.
+- Windows and macOS can't be run from the main development machine. Passing CI there isn't the same as trying them, so say which one you've done.
 
 ## Definition of done
 
@@ -35,7 +44,7 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo run -p gbadn-emu -- samples/demo.fasta
-cargo run -p gbadn-studio
+cargo build && target/debug/gbadn-studio   # Play needs the console built beside Studio
 cargo run -p gbadn-codec --example make_demo -- samples/demo.fasta   # regenerate the sample
 ```
 
@@ -48,4 +57,6 @@ cargo run -p gbadn-codec --example make_demo -- samples/demo.fasta   # regenerat
 - Every `unsafe` block has a `// SAFETY:` comment.
 - Don't modify `vendor/mgba`. To upgrade, move the submodule to a new tag in its own PR.
 - Documents and comments are in English. Keep comments for what the code can't say itself.
-- New dependencies must support the Rust version in use. `eframe` stays on 0.35 because newer releases require Rust 1.95.
+- New dependencies must support the Rust version in use, which is pinned to 1.94.1 in CI so new lints can't fail unrelated PRs. `eframe` stays on 0.35 because newer releases require Rust 1.95.
+- Keep the programs portable: Android is next, so avoid new system libraries, and keep desktop-only pieces such as the file dialog easy to swap out.
+- Press-and-hold tests must step in real time, because the emulator paces itself by the clock.
