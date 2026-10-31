@@ -36,6 +36,10 @@ The builds aren't signed, so systems warn the first time:
 - **Windows:** choose **More info**, then **Run anyway**.
 - **macOS:** run `xattr -dr com.apple.quarantine <folder>` once on the unpacked folder.
 
+## Android (in development)
+
+`.github/workflows/android.yml` builds an arm64 APK of the console on pull requests that touch the app. Tap **Open cartridge** and choose a `.fasta.gz`: it's copied to the app's private storage, where its saves live too. Conversion stays on desktop. Android isn't in a release yet.
+
 ## Build
 
 You need Rust 1.92 or newer, a C compiler and CMake. On Ubuntu:
@@ -89,6 +93,8 @@ Keys can be changed under **Controls**, and your choices are remembered. Gamepad
 | `crates/gbadn-codec` | The ROM to FASTA format, shared by both programs |
 | `crates/gbadn-emu` | The console: FASTA-only loader, egui window, cpal sound, gilrs gamepads, C shim over mGBA |
 | `crates/gbadn-studio` | The desktop UI |
+| `android/` | The Android manifest and the activity that provides the file picker |
+| `scripts/build-android.sh` | Builds the APK; used by CI |
 | `vendor/mgba` | [mGBA](https://mgba.io) 0.10.5 as a git submodule (MPL-2.0) |
 | `samples/demo.fasta` | The original demo cartridge |
 | `docs/FORMAT.md` | Format specification |

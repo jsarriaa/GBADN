@@ -67,10 +67,13 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 ## M6: Android (next)
 
-- [ ] Build the console as an APK in CI, including mGBA for Android
-- [ ] On-screen touch controls
-- [ ] Open cartridges on the phone, since the desktop file dialog doesn't work there
-- [ ] Test on a real phone
+- [x] Build the console as an arm64 APK in CI, including mGBA for Android
+- [~] On-screen touch controls: holding one button works on a real phone; several fingers tested only in unit tests
+- [x] Open cartridges through Android's file picker, with saves in private storage
+- [x] Demo cartridge runs on a real phone (OnePlus 13R, Android 16), including save and load state
+- [ ] Play a real game on the phone, with sound, by hand
+- [ ] Check that a quick tap on the toolbar registers: a very short synthetic tap didn't, a 150 ms press did
+- [ ] Lasting signing key, so updates install over older versions
 - [ ] Add the APK to releases
 
 Conversion stays on desktop: Android only plays cartridges.

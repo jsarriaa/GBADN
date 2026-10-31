@@ -37,6 +37,13 @@ If a step could not be done, leave the item as `[~]` and note what's missing. Ne
 - **Chromosome labels are best guesses.** Say so wherever they're shown. The classifier may change freely as long as the ROM rebuilds exactly.
 - **Be honest about size.** FASTA output is usually larger than the ROM; don't describe it as smaller on disk.
 
+## Android
+
+- APKs build in GitHub Actions. Don't install an SDK, NDK or JDK on a machine unless its owner agrees.
+- To test: `gh run download <run-id>`, `adb install -r <apk>`, `adb logcat`, and `adb exec-out screencap -p`. Until a lasting key exists, each build has a new signature, so an install may need `adb uninstall org.gbadn.console` first, which deletes the app's saves on that phone.
+- Rust panics go to `adb logcat` under the tag `gbadn`.
+- Keep Android-only code in `crates/gbadn-emu/src/android.rs` and `android/`. The console takes touch controls and the file picker as options, so desktop tests can cover them.
+
 ## Commands
 
 ```sh
