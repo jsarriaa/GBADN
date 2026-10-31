@@ -5,7 +5,7 @@ import { extname, join } from "node:path";
 import { chromium } from "playwright";
 
 const [dist, romPath, shots] = process.argv.slice(2);
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm", ".svg": "image/svg+xml" };
 
 const server = createServer(async (request, response) => {
   const requested = new URL(request.url, "http://localhost").pathname;
