@@ -17,12 +17,12 @@ thiserror = "2"
 
 # Accessibility support doesn't build with Android's NativeActivity.
 [target.'cfg(not(target_os = "android"))'.dependencies]
-eframe = { version = "0.35", features = ["accesskit", "wayland", "x11"] }
+eframe = { version = "0.35", default-features = false, features = ["accesskit", "wayland", "x11"] }
 rfd = "0.15"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.15"
-eframe = { version = "0.35", features = ["android-native-activity"] }
+eframe = { version = "0.35", default-features = false, features = ["android-native-activity"] }
 jni = "0.21"
 log = "0.4"
 
