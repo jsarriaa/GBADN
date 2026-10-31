@@ -1,13 +1,17 @@
+<p align="center"><img src="assets/logo.svg" alt="GBADN" width="320"></p>
+
 # GBADN
 
 A Game Boy Advance console whose cartridges are DNA.
+
+**[Try it in your browser](https://jsarriaa.github.io/GBADN/)**: nothing to install, and your files stay on your device.
 
 GBADN has two programs:
 
 - **GBADN Console** (`gbadn-emu`) is a GBA emulator that only reads FASTA genomic files, plain or gzip-compressed. It refuses `.gba` files, and a ROM renamed to `.fasta` as well.
 - **GBADN Studio** (`gbadn-studio`) is a desktop app: drop a GBA ROM in and get a `.fasta.gz` file out.
 
-Current release: v0.2.0, for Linux, Windows, macOS and Android. See [ROADMAP.md](ROADMAP.md) for what's verified and what's next.
+Current release: v0.2.0, for Linux, Windows, macOS, Android and browsers. See [ROADMAP.md](ROADMAP.md) for what's verified and what's next.
 
 ## How it works
 
@@ -35,7 +39,13 @@ The builds aren't signed, so systems warn the first time:
 
 - **Windows:** choose **More info**, then **Run anyway**.
 - **macOS:** run `xattr -dr com.apple.quarantine <folder>` once on the unpacked folder.
-- **Android:** allow installing from your browser or file manager when asked. Android is console-only, so convert on a computer.
+- **Android:** allow installing from your browser or file manager when asked. Android is console-only, so convert on a computer or in the browser version.
+
+The v0.2.0 APK has a temporary signing key, so a later version may need the app uninstalled first, which deletes saves kept on that phone.
+
+## Browser
+
+The [website](https://jsarriaa.github.io/GBADN/) has the console and the converter. Saves and save states stay in that browser's storage, so clearing its site data deletes them.
 
 ## Android
 
@@ -94,6 +104,8 @@ Keys can be changed under **Controls**, and your choices are remembered. Gamepad
 | `crates/gbadn-codec` | The ROM to FASTA format, shared by both programs |
 | `crates/gbadn-emu` | The console: FASTA-only loader, egui window, cpal sound, gilrs gamepads, C shim over mGBA |
 | `crates/gbadn-studio` | The desktop UI |
+| `crates/gbadn-web`, `web/` | The browser version |
+| `assets/`, `scripts/make-logo.py` | The logo and the script that draws it |
 | `android/` | The Android manifest and the activity that provides the file picker |
 | `scripts/build-android.sh` | Builds the APK; used by CI |
 | `vendor/mgba` | [mGBA](https://mgba.io) 0.10.5 as a git submodule (MPL-2.0) |

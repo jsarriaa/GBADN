@@ -182,6 +182,23 @@ await test("a phone held upright fits too", async () => {
   await phone.screenshot({ path: join(shots, "phone-upright.png") });
 });
 
+await test("the logo renders", async () => {
+  const context = await browser.newContext({ viewport: { width: 820, height: 540 } });
+  const logo = await context.newPage();
+  const response = await logo.goto(`${url}logo.svg`);
+  if (!response.ok()) throw new Error(`logo.svg: ${response.status()}`);
+  await logo.screenshot({ path: join(shots, "logo.png") });
+  await logo.goto(`${url}favicon.svg`);
+  await logo.screenshot({ path: join(shots, "favicon.png") });
+  const small = await browser.newContext({ viewport: { width: 192, height: 192 } });
+  const icon = await small.newPage();
+  await icon.setContent(
+    `<body style="margin:0;background:#16181C;display:flex;align-items:center;justify-content:center;height:192px"><img src="${url}logo.svg" width="142"></body>`,
+    { waitUntil: "networkidle" },
+  );
+  await icon.screenshot({ path: join(shots, "icon-size.png") });
+});
+
 await browser.close();
 server.close();
 if (failures.length) {

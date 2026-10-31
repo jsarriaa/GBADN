@@ -35,6 +35,7 @@ emcc -O3 \
     -o "$dist/gbadn.js"
 
 cp "$root"/web/index.html "$root"/web/style.css "$root"/web/app.js "$root"/web/codec-worker.js "$root"/web/sound-worklet.js "$dist/"
+cp "$root/web/favicon.svg" "$root/assets/logo.svg" "$dist/"
 cp "$root/samples/demo.fasta" "$dist/demo.fasta"
 cp "$root/LICENSE" "$dist/LICENSE.txt"
 cp "$root/vendor/mgba/LICENSE" "$dist/LICENSE.mGBA.txt"

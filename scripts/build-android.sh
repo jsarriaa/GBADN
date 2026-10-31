@@ -31,7 +31,9 @@ javac --release 8 -nowarn -Xlint:-options -classpath "$android_jar" -d "$work/cl
 "$build_tools/d8" --release --lib "$android_jar" --min-api "$api" --output "$work/dex" \
     "$work"/classes/org/gbadn/console/*.class
 
-"$build_tools/aapt2" link -o "$work/base.apk" --manifest android/AndroidManifest.xml -I "$android_jar"
+"$build_tools/aapt2" compile --dir android/res -o "$work/resources.zip"
+"$build_tools/aapt2" link -o "$work/base.apk" --manifest android/AndroidManifest.xml -I "$android_jar" \
+    -R "$work/resources.zip" --auto-add-overlay
 cp "$work/dex/classes.dex" "$work/apk/"
 cp "target/$triple/release/libgbadn_emu.so" "$work/apk/lib/$abi/"
 (
