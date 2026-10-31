@@ -8,9 +8,10 @@ const [dist, romPath, shots] = process.argv.slice(2);
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".wasm": "application/wasm" };
 
 const server = createServer(async (request, response) => {
-  const path = new URL(request.url, "http://localhost").pathname;
+  const requested = new URL(request.url, "http://localhost").pathname;
+  const path = requested === "/" ? "/index.html" : requested;
   try {
-    const body = await readFile(join(dist, path === "/" ? "index.html" : path));
+    const body = await readFile(join(dist, path));
     response.writeHead(200, { "content-type": TYPES[extname(path)] ?? "application/octet-stream" });
     response.end(body);
   } catch {
