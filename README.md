@@ -25,6 +25,15 @@ Each cartridge is split into `chrHeader`, `chrCode`, `chrGraphics`, `chrAudio`, 
 
 Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is about 4 times the size of its zstd-compressed payload, and usually larger than the ROM. Cartridges are therefore gzip-compressed, like most genomic data: a 16 MiB Pokemon Emerald ROM becomes 24 MiB of FASTA, or 7.4 MiB as `.fasta.gz`. It stays real FASTA: `zcat game.fasta.gz` shows the sequence.
 
+## Download
+
+Linux, Windows and macOS (Apple Silicon) builds are on the [Releases](../../releases) page. Unpack the archive and keep both programs in the same folder.
+
+The builds aren't signed, so systems warn the first time:
+
+- **Windows:** choose **More info**, then **Run anyway**.
+- **macOS:** run `xattr -dr com.apple.quarantine <folder>` once on the unpacked folder.
+
 ## Build
 
 You need Rust 1.92 or newer, a C compiler and CMake. On Ubuntu:

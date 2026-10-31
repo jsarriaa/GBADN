@@ -58,8 +58,9 @@ Status: `[x]` meets the definition of done in [CLAUDE.md](CLAUDE.md). `[~]` writ
 
 ## M5: Releases
 
-- [ ] Windows and macOS builds in CI
-- [ ] Packaged downloads
+- [~] Linux, Windows and macOS builds and tests in CI: not yet tried by hand on Windows or macOS
+- [~] Packaged downloads: workflow written; no release published yet
+- [ ] Android: console with touch controls and a file picker
 - [ ] Pick a license and decide on going public
 
 ## M6: Genome features (ideas)
