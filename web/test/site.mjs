@@ -190,11 +190,12 @@ await test("the genome study shows every figure and fits a phone", async () => {
     await study.click(".study-link");
     await study.waitForURL("**/study.html");
     await study.evaluate(() => document.querySelectorAll("img").forEach((image) => { image.loading = "eager"; }));
-    const figures = await study.locator("figure img").count();
+    const figures = await study.locator("main > figure img").count();
     if (figures !== 5) throw new Error(`${figures} figures`);
     if (!(await study.locator(".twin").isVisible())) throw new Error("the genome twin is missing");
+    if ((await study.locator(".pair img").count()) !== 2) throw new Error("the side-by-side pictures are missing");
     await waitFor(
-      () => study.evaluate(() => [...document.images].every((image) => image.complete && image.naturalWidth > 0)),
+      () => study.evaluate(() => [...document.images].filter((image) => image.src.startsWith(location.origin)).every((image) => image.complete && image.naturalWidth > 0)),
       "the figures to load",
     );
     const overflow = await study.evaluate(() => document.documentElement.scrollWidth - innerWidth);

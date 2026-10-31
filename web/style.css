@@ -156,3 +156,7 @@ a { color: var(--accent); }
 .data th:first-child { font-weight: normal; text-align: left; }
 .twin { margin-top: 28px; }
 .twin .data em { font-weight: inherit; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 720px; margin-block: 12px 20px; }
+.study .pair figure { margin: 0; min-width: 0; }
+.study .pair img { aspect-ratio: 1; object-fit: contain; background: var(--panel); }
+.study .pair figcaption { font-size: 13px; overflow-wrap: anywhere; }

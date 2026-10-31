@@ -40,6 +40,12 @@ A game can also be studied like an organism. These figures of *Pokémon Emerald*
 
 Curiosity: at 67.1 Mbp, Emerald's decoded ROM matches the genome size of *Oikopleura dioica*, a tiny tadpole-shaped sea creature with [one of the smallest animal genomes, 65–70 Mbp](https://pmc.ncbi.nlm.nih.gov/articles/PMC8008620/). The match is only in size.
 
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/en/f/f7/PokemonEmeraldBox.jpg" alt="Front cover of Pokémon Emerald Version" height="260">
+  <img src="docs/study/oikopleura-dioica.jpg" alt="Microscope photo of an adult Oikopleura dioica" height="260">
+</p>
+<p align="center"><sub>Cover art © Nintendo, Game Freak and Creatures, shown from <a href="https://en.wikipedia.org/wiki/File:PokemonEmeraldBox.jpg">Wikipedia</a>. Photo by Mowgli, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>, from <a href="https://commons.wikimedia.org/wiki/File:Oikopleura_dioica.tif">Wikimedia Commons</a>.</sub></p>
+
 To study your own cartridge, with the Python packages from `scripts/requirements-study.txt` installed:
 
 ```sh
@@ -138,3 +144,5 @@ GBADN includes no games. Only convert ROMs you have the right to use. A FASTA fi
 ## License
 
 GBADN's own code is under the [MIT License](LICENSE). [mGBA](https://mgba.io) keeps its own MPL-2.0 license, included with every download.
+
+The MIT License does not cover `docs/study/oikopleura-dioica.jpg`, which is CC BY-SA 4.0 by Mowgli.
