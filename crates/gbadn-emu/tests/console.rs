@@ -47,7 +47,7 @@ fn produces_audio_samples() {
     let mut total = 0;
     for _ in 0..10 {
         core.run_frame(0);
-        total += core.read_audio(&mut samples);
+        total += core.read_audio(&mut samples, 48000);
     }
     assert!(total > 0);
 }

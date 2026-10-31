@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 use eframe::egui;
 use gbadn_emu::app::{Console, saved_bindings};
+use gbadn_emu::audio::Speaker;
 use gbadn_emu::controls::Gamepads;
-use gbadn_emu::{AUDIO_RATE, HEIGHT, WIDTH};
-use sdl2::audio::{AudioQueue, AudioSpecDesired};
+use gbadn_emu::{HEIGHT, WIDTH};
 
 const TOOLBAR_HEIGHT: f32 = 36.0;
 const SCALE: f32 = 3.0;
@@ -24,7 +24,7 @@ fn main() -> eframe::Result {
         "GBADN Console",
         options,
         Box::new(move |cc| {
-            let mut console = Console::new(open_audio())
+            let mut console = Console::new(Speaker::open())
                 .with_saved_bindings(&saved_bindings(cc.storage))
                 .with_gamepads(Gamepads::new());
             if let Some(path) = cartridge {
@@ -33,23 +33,4 @@ fn main() -> eframe::Result {
             Ok(Box::new(console))
         }),
     )
-}
-
-/// A machine without sound can still play, so audio failures are not fatal.
-fn open_audio() -> Option<AudioQueue<i16>> {
-    let desired = AudioSpecDesired {
-        freq: Some(AUDIO_RATE),
-        channels: Some(2),
-        samples: Some(1024),
-    };
-    // SDL otherwise turns Ctrl+C into an event, and only sound uses SDL here, so nobody reads it.
-    sdl2::hint::set("SDL_NO_SIGNAL_HANDLERS", "1");
-    let queue = sdl2::init()
-        .ok()?
-        .audio()
-        .ok()?
-        .open_queue::<i16, _>(None, &desired)
-        .ok()?;
-    queue.resume();
-    Some(queue)
 }
