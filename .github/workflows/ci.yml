@@ -20,3 +20,11 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Draw the genome study of the demo cartridge
+        run: |
+          pip install -r scripts/requirements-study.txt
+          cargo run -p gbadn-study -- samples/demo.fasta "$RUNNER_TEMP/study"
+          python scripts/plot-study.py "$RUNNER_TEMP/study" "$RUNNER_TEMP/figures"

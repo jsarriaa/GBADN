@@ -8,6 +8,7 @@ on:
       - .github/workflows/web.yml
       - web/**
       - assets/**
+      - docs/study/**
       - crates/gbadn-web/**
       - crates/gbadn-codec/**
       - crates/gbadn-emu/shim/**

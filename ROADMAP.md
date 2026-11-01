@@ -81,6 +81,7 @@ Conversion stays on desktop: Android only plays cartridges.
 
 ## M7: Genome features (ideas)
 
+- [x] Genome study: karyotype, Circos plot, assembly report, dot plot and quality figures from a real cartridge, on the website
 - [ ] Saves stored as FASTA too
 - [ ] Mutation mode that corrupts games on purpose
 - [ ] Synthesis-ready encoding: no long single-base runs, balanced GC, error correction

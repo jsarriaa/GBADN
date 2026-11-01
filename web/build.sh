@@ -34,9 +34,11 @@ emcc -O3 \
     -sEXPORTED_FUNCTIONS=_malloc,_free,_gbadn_web_decode,_gbadn_web_encode,_gbadn_web_bytes,_gbadn_web_bytes_size,_gbadn_web_message,_gbadn_web_message_size,_gbadn_core_new,_gbadn_core_free,_gbadn_core_run_frame,_gbadn_core_video,_gbadn_core_read_audio,_gbadn_core_state_size,_gbadn_core_save_state,_gbadn_core_load_state,_gbadn_core_savedata_clone,_gbadn_core_savedata_restore \
     -o "$dist/gbadn.js"
 
-cp "$root"/web/index.html "$root"/web/style.css "$root"/web/app.js "$root"/web/codec-worker.js "$root"/web/sound-worklet.js "$dist/"
+cp "$root"/web/index.html "$root"/web/style.css "$root"/web/app.js "$root"/web/codec-worker.js "$root"/web/sound-worklet.js "$root"/web/study.html "$dist/"
 cp "$root/web/favicon.svg" "$root/assets/logo.svg" "$dist/"
 cp "$root/samples/demo.fasta" "$dist/demo.fasta"
+mkdir "$dist/study"
+cp "$root"/docs/study/*.png "$root"/docs/study/*.jpg "$dist/study/"
 cp "$root/LICENSE" "$dist/LICENSE.txt"
 cp "$root/vendor/mgba/LICENSE" "$dist/LICENSE.mGBA.txt"
 touch "$dist/.nojekyll"

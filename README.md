@@ -29,6 +29,30 @@ Each cartridge is split into `chrHeader`, `chrCode`, `chrGraphics`, `chrAudio`, 
 
 Each byte takes 4 bases, and each base takes one byte of text, so plain FASTA is about 4 times the size of its zstd-compressed payload, and usually larger than the ROM. Cartridges are therefore gzip-compressed, like most genomic data: one 16 MiB ROM became 24 MiB of FASTA, or 7.4 MiB as `.fasta.gz`. It stays real FASTA: `zcat game.fasta.gz` shows the sequence.
 
+## Genome study
+
+A game can also be studied like an organism. These figures of *Pokémon Emerald* come from real measurements of its decoded ROM at 4 bases per byte, with best-guess chromosome labels. They contain no game data. See [all five on the website](https://jsarriaa.github.io/GBADN/study.html): karyotype, Circos plot, assembly report, self dot plot and sequence quality.
+
+<p align="center">
+  <img src="docs/study/circos.png" alt="Circos plot of chromosomes, GC content, byte entropy and repeated stretches" width="49%">
+  <img src="docs/study/karyotype.png" alt="Karyotype of six chromosomes banded by GC content" width="49%">
+</p>
+
+Curiosity: at 67.1 Mbp, Emerald's decoded ROM matches the genome size of *Oikopleura dioica*, a tiny tadpole-shaped sea creature with [one of the smallest animal genomes, 65–70 Mbp](https://pmc.ncbi.nlm.nih.gov/articles/PMC8008620/). The match is only in size.
+
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/en/f/f7/PokemonEmeraldBox.jpg" alt="Front cover of Pokémon Emerald Version" height="260">
+  <img src="docs/study/oikopleura-dioica.jpg" alt="Microscope photo of an adult Oikopleura dioica" height="260">
+</p>
+<p align="center"><sub>Cover art © Nintendo, Game Freak and Creatures, shown from <a href="https://en.wikipedia.org/wiki/File:PokemonEmeraldBox.jpg">Wikipedia</a>. Photo by Mowgli, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>, from <a href="https://commons.wikimedia.org/wiki/File:Oikopleura_dioica.tif">Wikimedia Commons</a>.</sub></p>
+
+To study your own cartridge, with the Python packages from `scripts/requirements-study.txt` installed:
+
+```sh
+cargo run --release -p gbadn-study -- game.fasta.gz study-tables
+python scripts/plot-study.py study-tables study-figures
+```
+
 ## Download
 
 Linux, Windows, macOS (Apple Silicon) and Android (arm64) builds are on the [Releases](../../releases) page. Intel Macs aren't covered yet.
@@ -105,6 +129,7 @@ Keys can be changed under **Controls**, and your choices are remembered. Gamepad
 | `crates/gbadn-emu` | The console: FASTA-only loader, egui window, cpal sound, gilrs gamepads, C shim over mGBA |
 | `crates/gbadn-studio` | The desktop UI |
 | `crates/gbadn-web`, `web/` | The browser version |
+| `crates/gbadn-study`, `scripts/plot-study.py`, `docs/study/` | Genome-study measurements, the script that draws them, and the published figures |
 | `assets/`, `scripts/make-logo.py` | The logo and the script that draws it |
 | `android/` | The Android manifest and the activity that provides the file picker |
 | `scripts/build-android.sh` | Builds the APK; used by CI |
@@ -119,3 +144,5 @@ GBADN includes no games. Only convert ROMs you have the right to use. A FASTA fi
 ## License
 
 GBADN's own code is under the [MIT License](LICENSE). [mGBA](https://mgba.io) keeps its own MPL-2.0 license, included with every download.
+
+The MIT License does not cover `docs/study/oikopleura-dioica.jpg`, which is CC BY-SA 4.0 by Mowgli.

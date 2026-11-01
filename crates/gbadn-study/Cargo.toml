@@ -1,0 +1,10 @@
+[package]
+name = "gbadn-study"
+description = "Measure a GBADN cartridge the way a genome study would"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+gbadn-codec = { path = "../gbadn-codec" }
